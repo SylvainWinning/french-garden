@@ -85,16 +85,6 @@
           </label>
         </section>
 
-        <section class="progress-panel">
-          <div class="section-heading">
-            <div>
-              <p class="eyebrow" data-i18n="progressEyebrow">Progress</p>
-              <h2 data-i18n="progressTitle">Practice by category</h2>
-            </div>
-          </div>
-          <div id="category-progress" class="category-progress"></div>
-        </section>
-
         <nav class="tabs" aria-label="Practice sections">
           <button class="tab active" type="button" data-view="quiz">
             <span data-i18n="quizTab">Quiz</span>
@@ -116,6 +106,9 @@
           </button>
           <button class="tab" type="button" data-view="situations">
             <span data-i18n="situationsTab">Situations</span>
+          </button>
+          <button class="tab" type="button" data-view="progress">
+            <span data-i18n="progressTab">Progress</span>
           </button>
         </nav>
 
@@ -267,9 +260,21 @@
 
           <div id="situations-board" class="situations-board"></div>
         </section>
+
+        <section id="progress" class="view" aria-labelledby="progress-tab">
+          <div class="progress-panel">
+            <div class="section-heading">
+              <div>
+                <p class="eyebrow" data-i18n="progressEyebrow">Progress</p>
+                <h2 data-i18n="progressTitle">Practice by category</h2>
+              </div>
+            </div>
+            <div id="category-progress" class="category-progress"></div>
+          </div>
+        </section>
       </main>
     </div>
 
-    <script type="module" src="./app.js?v=20260524-wrong-answer-fix"></script>
+    <script type="module" src="./app.js?v=20260524-progress-tab"></script>
   </body>
 </html>
