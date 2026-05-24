@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-rewards";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-reward-images";
 
 const STORAGE_KEY = "french-garden-progress";
 const REWARD_EMAIL_KEY = "french-garden-reward-email";
@@ -7,36 +7,43 @@ const REWARD_MILESTONES = [
   {
     id: "kiss-5",
     answers: 5,
+    image: "./assets/rewards/reward-1.jpg",
     reward: { en: "a kiss from Sylvain", be: "пацалунак ад Сільвэна" },
   },
   {
     id: "hug-10",
     answers: 10,
+    image: "./assets/rewards/reward-5.jpg",
     reward: { en: "a big hug from Sylvain", be: "моцныя абдымкі ад Сільвэна" },
   },
   {
     id: "tea-20",
     answers: 20,
+    image: "./assets/rewards/reward-6.jpg",
     reward: { en: "tea together", be: "гарбата разам" },
   },
   {
     id: "dessert-35",
     answers: 35,
+    image: "./assets/rewards/reward-3.jpg",
     reward: { en: "a dessert chosen by her", be: "дэсерт, які яна выбірае" },
   },
   {
     id: "movie-50",
     answers: 50,
+    image: "./assets/rewards/reward-7.jpg",
     reward: { en: "a movie night together", be: "вечар кіно разам" },
   },
   {
     id: "walk-75",
     answers: 75,
+    image: "./assets/rewards/reward-4.jpg",
     reward: { en: "a sweet walk together", be: "мілая прагулка разам" },
   },
   {
     id: "date-100",
     answers: 100,
+    image: "./assets/rewards/reward-2.jpg",
     reward: { en: "a little date planned by Sylvain", be: "маленькае спатканне ад Сільвэна" },
   },
 ];
@@ -112,6 +119,7 @@ const elements = {
   rewardEmail: document.querySelector("#reward-email"),
   rewardList: document.querySelector("#reward-list"),
   rewardModal: document.querySelector("#reward-modal"),
+  rewardImage: document.querySelector("#reward-image"),
   rewardModalTitle: document.querySelector("#reward-modal-title"),
   rewardModalText: document.querySelector("#reward-modal-text"),
   rewardMail: document.querySelector("#reward-mail"),
@@ -786,6 +794,7 @@ function renderRewards() {
         ? formatText(t("rewardForAnswers"), { count: milestone.answers })
         : formatText(t("rewardLocked"), { count: milestone.answers });
       card.innerHTML = `
+        <img class="reward-thumb" src="${milestone.image}" alt="" loading="lazy" />
         <div>
           <strong>${getRewardText(milestone)}</strong>
           <span>${status}</span>
@@ -809,6 +818,8 @@ function renderRewards() {
 function showRewardModal(reward) {
   state.activeReward = reward;
   elements.rewardModal.hidden = false;
+  elements.rewardImage.src = reward.image;
+  elements.rewardImage.alt = getRewardText(reward);
   elements.rewardModalTitle.textContent = getRewardText(reward);
   elements.rewardModalText.textContent = formatText(t("rewardForAnswers"), {
     count: reward.answers,

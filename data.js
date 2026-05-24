@@ -1,4 +1,4 @@
-export { uiText } from "./ui-text.js?v=20260524-rewards";
+export { uiText } from "./ui-text.js?v=20260524-reward-images";
 export { vocabulary } from "./vocabulary.js";
 export { phrases } from "./phrases.js";
 export { situations } from "./situations.js";

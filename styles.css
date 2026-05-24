@@ -350,11 +350,22 @@ h3 {
 
 .reward-card {
   display: grid;
+  grid-template-columns: 76px minmax(0, 1fr);
+  align-items: center;
   gap: 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 255, 255, 0.72);
   padding: 12px;
+}
+
+.reward-thumb {
+  width: 76px;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  object-fit: cover;
+  object-position: center;
 }
 
 .reward-card-unlocked {
@@ -597,7 +608,9 @@ h3 {
 .reward-dialog {
   display: grid;
   gap: 12px;
-  width: min(100%, 440px);
+  width: min(100%, 480px);
+  max-height: calc(100vh - 36px);
+  overflow: auto;
   border: 2px solid rgba(255, 111, 174, 0.32);
   border-radius: 8px;
   background: var(--white);
@@ -612,6 +625,17 @@ h3 {
 
 .reward-dialog h2 {
   color: #a22465;
+}
+
+.reward-image {
+  display: block;
+  width: 100%;
+  max-height: min(58vh, 520px);
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  object-fit: contain;
+  object-position: center;
 }
 
 .reward-dialog > p:not(.eyebrow):not(.reward-helper) {
@@ -899,5 +923,13 @@ h3 {
 
   .card-actions:last-child {
     grid-template-columns: 1fr;
+  }
+
+  .reward-card {
+    grid-template-columns: 64px minmax(0, 1fr);
+  }
+
+  .reward-thumb {
+    width: 64px;
   }
 }

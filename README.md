@@ -31,6 +31,7 @@ Current learning features:
 - Picture quiz with built-in images.
 - Guided mini-situations for daily life.
 - Reward milestones with a prefilled email message for Sylvain.
+- Reward photos stored in `assets/rewards`.
 - Category progress stored in the browser.
 - "I know it" and "Review later" actions on flashcards.
 
