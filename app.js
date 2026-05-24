@@ -1,6 +1,7 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-review-empty";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-tracker";
+import { createUsageTracker } from "./tracker.js?v=20260524-tracker";
 
-const STORAGE_KEY = "french-garden-progress-clean-start-20260524";
+const STORAGE_KEY = "french-garden-progress-clean-start-20260524-tracker-reset";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
 const HERO_PHOTOS = [
   "./assets/hero/hero-1.jpg",
@@ -118,6 +119,16 @@ const state = {
   progress: loadProgress(),
 };
 
+const tracker = createUsageTracker({
+  getLanguage: () => state.uiLanguage,
+  getStats: () => ({
+    score: state.progress.score,
+    correctAnswers: state.progress.correctAnswers,
+    practicedCount: state.progress.practiced.length,
+    reviewCount: getReviewIds().length,
+  }),
+});
+
 const elements = {
   uiLanguage: document.querySelector("#ui-language"),
   score: document.querySelector("#score"),
@@ -183,6 +194,8 @@ function init() {
   nextPhrase();
   renderSituations();
   bindEvents();
+  tracker.track("session_start");
+  tracker.startHeartbeat();
 }
 
 function setRandomHeroPhoto() {
@@ -200,7 +213,6 @@ function bindEvents() {
     renderPicture();
     resetMatch();
     renderPhrase();
-    renderListening();
     renderSituations();
     renderStats();
     renderProgress();
@@ -351,6 +363,7 @@ function answerQuiz(option) {
   elements.quizFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
   elements.quizFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   recordAttempt(state.quizItem.id, isCorrect);
+  trackAnswer("quiz", state.quizItem.id, isCorrect);
   if (isCorrect) celebrate(elements.quizFeedback);
   if (isCorrect) window.setTimeout(nextQuiz, 850);
 }
@@ -410,6 +423,7 @@ function answerPicture(optionText) {
   elements.pictureFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
   elements.pictureFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   recordAttempt(progressId, isCorrect);
+  trackAnswer("picture", progressId, isCorrect);
   if (isCorrect) celebrate(elements.pictureFeedback);
   if (isCorrect) window.setTimeout(nextPicture, 850);
 }
@@ -461,12 +475,14 @@ function chooseMatch(button, card) {
     state.matchedIds.add(card.id);
     updateScore(true, card.id);
     recordAttempt(card.id, true);
+    trackAnswer("match", card.id, true);
     celebrate(button);
   } else {
     button.classList.add("selected", "shake");
     first.button.classList.add("shake");
     updateScore(false, card.id);
     recordAttempt(card.id, false);
+    trackAnswer("match", card.id, false);
     window.setTimeout(() => {
       button.classList.remove("selected", "shake");
       first.button.classList.remove("selected", "shake");
@@ -518,6 +534,8 @@ function answerPhrase(option) {
   updateScore(isCorrect, state.phraseItem.id);
   elements.phraseFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
   elements.phraseFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
+  recordAttempt(state.phraseItem.id, isCorrect);
+  trackAnswer("phrase", state.phraseItem.id, isCorrect);
   if (isCorrect) {
     celebrate(elements.phraseFeedback);
     window.setTimeout(nextPhrase, 1000);
@@ -589,6 +607,12 @@ function unlockRewards() {
   newRewards.forEach((reward) => state.progress.unlockedRewards.push(reward.id));
   saveProgress();
   renderRewards();
+  newRewards.forEach((reward) => {
+    tracker.track("reward_unlocked", {
+      activityType: "reward",
+      itemId: reward.id,
+    });
+  });
   showRewardModal(newRewards[0]);
 }
 
@@ -618,7 +642,16 @@ function markCard(isKnown) {
 
   recordAttempt(item.id, isKnown);
   updateScore(isKnown, item.id);
+  trackAnswer("card", item.id, isKnown);
   nextCard();
+}
+
+function trackAnswer(activityType, itemId, isCorrect) {
+  tracker.track("answer", {
+    activityType,
+    itemId,
+    correct: isCorrect,
+  });
 }
 
 function recordAttempt(id, isCorrect) {
@@ -1036,8 +1069,9 @@ function getDistractorTranslations(correctItem, count) {
     ...pickDistractorGroup(candidates, correctItem, false, false),
   ]
     .filter(uniqueById())
-    .slice(0, count)
-    .map((item) => item.translations[state.uiLanguage]);
+    .map((item) => item.translations[state.uiLanguage])
+    .filter(uniqueValue())
+    .slice(0, count);
 }
 
 function getAnswerOptionCount(item) {
@@ -1088,6 +1122,15 @@ function uniqueById() {
   return (item) => {
     if (usedIds.has(item.id)) return false;
     usedIds.add(item.id);
+    return true;
+  };
+}
+
+function uniqueValue() {
+  const usedValues = new Set();
+  return (value) => {
+    if (usedValues.has(value)) return false;
+    usedValues.add(value);
     return true;
   };
 }
