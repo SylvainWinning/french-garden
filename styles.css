@@ -534,6 +534,22 @@ h3 {
   color: #b93c65;
 }
 
+.empty-state {
+  grid-column: 1 / -1;
+  margin: 0;
+  border: 2px dashed var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 252, 0.78);
+  color: var(--muted);
+  padding: 16px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.picture-image.is-empty {
+  display: none;
+}
+
 .reward-modal[hidden] {
   display: none;
 }

@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-mobile-filters-v3";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-review-empty";
 
 const STORAGE_KEY = "french-garden-progress-clean-start-20260524";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
@@ -311,7 +311,16 @@ function previousCard() {
 
 function nextQuiz() {
   const pool = getPracticeVocabulary();
-  state.quizItem = pickWithoutRecent(pool.length ? pool : vocabulary, state.recentQuizIds);
+  if (!pool.length) {
+    state.quizItem = null;
+    elements.quizWord.textContent = state.reviewOnly ? t("emptyReview") : t("emptyPractice");
+    elements.quizFeedback.textContent = "";
+    elements.quizFeedback.className = "feedback";
+    elements.quizOptions.replaceChildren();
+    return;
+  }
+
+  state.quizItem = pickWithoutRecent(pool, state.recentQuizIds);
   rememberRecent(state.recentQuizIds, state.quizItem.id);
   elements.quizWord.textContent = state.quizItem.french;
   elements.quizFeedback.textContent = "";
@@ -335,6 +344,8 @@ function nextQuiz() {
 }
 
 function answerQuiz(option) {
+  if (!state.quizItem) return;
+
   const isCorrect = option === state.quizItem.translations[state.uiLanguage];
   updateScore(isCorrect, state.quizItem.id);
   elements.quizFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
@@ -346,7 +357,18 @@ function answerQuiz(option) {
 
 function nextPicture() {
   const pool = getPracticePictures();
-  state.pictureItem = pickWithoutRecent(pool.length ? pool : pictureItems, state.recentPictureIds);
+  if (!pool.length) {
+    state.pictureItem = null;
+    elements.pictureImage.removeAttribute("src");
+    elements.pictureImage.alt = "";
+    elements.pictureImage.classList.add("is-empty");
+    elements.pictureFeedback.textContent = "";
+    elements.pictureFeedback.className = "feedback";
+    elements.pictureOptions.replaceChildren(createEmptyState());
+    return;
+  }
+
+  state.pictureItem = pickWithoutRecent(pool, state.recentPictureIds);
   rememberRecent(state.recentPictureIds, state.pictureItem.id);
   renderPicture();
 }
@@ -355,6 +377,7 @@ function renderPicture() {
   const item = state.pictureItem;
   if (!item) return;
 
+  elements.pictureImage.classList.remove("is-empty");
   elements.pictureImage.src = item.image;
   elements.pictureImage.alt = item.alt[state.uiLanguage] || item.alt.en;
   elements.pictureFeedback.textContent = "";
@@ -379,6 +402,8 @@ function renderPicture() {
 }
 
 function answerPicture(optionText) {
+  if (!state.pictureItem) return;
+
   const isCorrect = optionText === state.pictureItem.french;
   const progressId = getVocabularyIdByFrench(state.pictureItem.french);
   updateScore(isCorrect, progressId);
@@ -393,7 +418,14 @@ function resetMatch() {
   state.selectedMatch = null;
   state.matchedIds = new Set();
   const pool = getPracticeVocabulary();
-  const roundItems = shuffle(pool.length ? pool : vocabulary).slice(0, Math.min(5, pool.length || 5));
+  if (!pool.length) {
+    state.matchRoundSize = 0;
+    elements.matchFrenchRow.replaceChildren(createEmptyState());
+    elements.matchMeaningRow.replaceChildren();
+    return;
+  }
+
+  const roundItems = shuffle(pool).slice(0, Math.min(5, pool.length));
   state.matchRoundSize = roundItems.length;
   const frenchCards = shuffle(
     roundItems.map((item) => ({ id: item.id, type: "fr", label: item.french }))
@@ -965,6 +997,13 @@ function option(value, label) {
   const element = document.createElement("option");
   element.value = value;
   element.textContent = label;
+  return element;
+}
+
+function createEmptyState() {
+  const element = document.createElement("p");
+  element.className = "empty-state";
+  element.textContent = state.reviewOnly ? t("emptyReview") : t("emptyPractice");
   return element;
 }
 

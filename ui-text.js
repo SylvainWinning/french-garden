@@ -72,6 +72,7 @@ export const uiText = {
     level2: "Level 2",
     level3: "Level 3",
     emptyReview: "Nothing to review yet. Mark words for review or miss a quiz answer.",
+    emptyPractice: "Nothing here yet for these filters.",
   },
   be: {
     appLabel: "Практыка французскай",
@@ -146,5 +147,6 @@ export const uiText = {
     level2: "Узровень 2",
     level3: "Узровень 3",
     emptyReview: "Пакуль няма слоў на паўтор. Адзнач словы або памыліся ў тэсце.",
+    emptyPractice: "Пакуль тут нічога няма для гэтых фільтраў.",
   },
 };
