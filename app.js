@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-random-options";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-smarter-distractors";
 
 const STORAGE_KEY = "french-garden-progress";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
@@ -331,12 +331,7 @@ function nextQuiz() {
   rememberRecent(state.recentQuizIds, state.quizItem.id);
   elements.quizWord.textContent = state.quizItem.french;
   elements.quizFeedback.textContent = "";
-  const wrongOptions = shuffle(
-    vocabulary
-      .filter((item) => item.id !== state.quizItem.id)
-      .filter((item) => item.translations[state.uiLanguage] !== state.quizItem.translations[state.uiLanguage])
-      .map((item) => item.translations[state.uiLanguage])
-  ).slice(0, 3);
+  const wrongOptions = getDistractorTranslations(state.quizItem, 3);
   const options = shuffle([
     state.quizItem.translations[state.uiLanguage],
     ...wrongOptions,
@@ -440,12 +435,7 @@ function renderListening() {
   if (!item) return;
 
   elements.listenFeedback.textContent = "";
-  const wrongOptions = shuffle(
-    vocabulary
-      .filter((word) => word.id !== item.id)
-      .filter((word) => word.translations[state.uiLanguage] !== item.translations[state.uiLanguage])
-      .map((word) => word.translations[state.uiLanguage])
-  ).slice(0, 3);
+  const wrongOptions = getDistractorTranslations(item, 3);
   const options = shuffle([item.translations[state.uiLanguage], ...wrongOptions]);
 
   elements.listenOptions.replaceChildren(
@@ -1038,6 +1028,58 @@ function pickWithoutRecent(items, recentIds) {
 function rememberRecent(recentIds, id) {
   recentIds.push(id);
   if (recentIds.length > 8) recentIds.shift();
+}
+
+function getDistractorTranslations(correctItem, count) {
+  const correctTranslation = correctItem.translations[state.uiLanguage];
+  const candidates = vocabulary.filter(
+    (item) =>
+      item.id !== correctItem.id &&
+      item.translations[state.uiLanguage] !== correctTranslation
+  );
+
+  return [
+    ...pickDistractorGroup(candidates, correctItem, true, true),
+    ...pickDistractorGroup(candidates, correctItem, true, false),
+    ...pickDistractorGroup(candidates, correctItem, false, true),
+    ...pickDistractorGroup(candidates, correctItem, false, false),
+  ]
+    .filter(uniqueById())
+    .slice(0, count)
+    .map((item) => item.translations[state.uiLanguage]);
+}
+
+function pickDistractorGroup(candidates, correctItem, sameCategory, sameAnswerShape) {
+  return shuffle(
+    candidates.filter((item) => {
+      const categoryMatches = !sameCategory || item.category === correctItem.category;
+      const shapeMatches =
+        !sameAnswerShape ||
+        getAnswerShape(item.translations.en) === getAnswerShape(correctItem.translations.en);
+
+      return categoryMatches && shapeMatches;
+    })
+  );
+}
+
+function getAnswerShape(answer) {
+  const normalized = answer.toLowerCase();
+  if (/^(a|an|the)\b/.test(normalized)) return "article";
+  if (/^(i|you|he|she|we|they)\b/.test(normalized)) return "sentence";
+  if (/^(to|over|far)\b/.test(normalized)) return "direction";
+  if (/day$|day\b|today|tomorrow|yesterday|now|later|morning|evening/.test(normalized)) {
+    return "time";
+  }
+  return "plain";
+}
+
+function uniqueById() {
+  const usedIds = new Set();
+  return (item) => {
+    if (usedIds.has(item.id)) return false;
+    usedIds.add(item.id);
+    return true;
+  };
 }
 
 function shuffle(items) {
