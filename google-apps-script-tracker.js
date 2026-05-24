@@ -1,4 +1,5 @@
 const SHEET_NAME = "Events";
+const SPREADSHEET_ID = "1jH-f1Pz5pMgW2ts5BSBwaChSIivFcfjkPO6p_4PIWDw";
 const HEADERS = [
   "receivedAt",
   "timestamp",
@@ -39,7 +40,7 @@ function doGet() {
 }
 
 function getEventsSheet() {
-  const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+  const spreadsheet = SpreadsheetApp.openById(SPREADSHEET_ID);
   let sheet = spreadsheet.getSheetByName(SHEET_NAME);
   if (!sheet) sheet = spreadsheet.insertSheet(SHEET_NAME);
 

@@ -56,29 +56,16 @@ repository settings. Use the branch and folder you prefer, for example
 
 ## Private usage tracker
 
-The app can send invisible usage events to a private Google Sheet. Tracking is
-off until an endpoint is configured, and failures are ignored so the app keeps
-working offline.
+The app sends invisible usage events to a private Google Form owned by Sylvain.
+Google Forms stores each event with its own timestamp, and failures are ignored
+so the app keeps working offline.
 
 Status:
 
 - The published app already contains the reset progress key.
-- The private tracker Sheet is created.
-- Tracking remains inactive until the deployed Apps Script URL is pasted into
-  `TRACKING_ENDPOINT` in `tracker.js`.
-
-Setup:
-
-1. Use the private tracker Sheet:
-   https://docs.google.com/spreadsheets/d/1jH-f1Pz5pMgW2ts5BSBwaChSIivFcfjkPO6p_4PIWDw
-2. Open Extensions > Apps Script.
-3. Paste the contents of `google-apps-script-tracker.js`.
-4. Deploy it as a Web app with access set to "Anyone".
-5. Copy the Web app URL into `TRACKING_ENDPOINT` in `tracker.js`.
-6. Commit and push the updated `tracker.js`.
-
-After setup, open the app once and answer a question. The Sheet should receive
-at least one `session_start` row and one `answer` row.
+- Tracking posts to the private Google Form:
+  https://docs.google.com/forms/d/e/1FAIpQLScPJz900yUZ6JEpUYOeXa3bzNnALZ7xZVF6xjcJCdzfqg2qzQ/viewform
+- The legacy Google Apps Script file is kept only as a fallback reference.
 
 Events currently logged:
 

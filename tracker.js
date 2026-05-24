@@ -1,7 +1,6 @@
-// Paste the deployed Google Apps Script Web app URL here.
-// Example: https://script.google.com/macros/s/AKfycb.../exec
-const TRACKING_ENDPOINT = "";
-const HAS_TRACKING_ENDPOINT = TRACKING_ENDPOINT.startsWith("https://script.google.com/");
+const TRACKING_ENDPOINT = "https://docs.google.com/forms/d/e/1FAIpQLScPJz900yUZ6JEpUYOeXa3bzNnALZ7xZVF6xjcJCdzfqg2qzQ/formResponse";
+const TRACKING_PAYLOAD_FIELD = "entry.1264612823";
+const HAS_TRACKING_ENDPOINT = TRACKING_ENDPOINT.startsWith("https://docs.google.com/forms/");
 const CLIENT_ID_KEY = "french-garden-tracker-client-id";
 const HEARTBEAT_INTERVAL_MS = 3 * 60 * 1000;
 
@@ -31,9 +30,13 @@ export function createUsageTracker({ getLanguage, getStats }) {
     };
 
     try {
-      const body = JSON.stringify(payload);
+      const body = new URLSearchParams({
+        [TRACKING_PAYLOAD_FIELD]: JSON.stringify(payload),
+      }).toString();
       if (navigator.sendBeacon) {
-        const blob = new Blob([body], { type: "text/plain;charset=UTF-8" });
+        const blob = new Blob([body], {
+          type: "application/x-www-form-urlencoded;charset=UTF-8",
+        });
         navigator.sendBeacon(TRACKING_ENDPOINT, blob);
         return;
       }
@@ -42,7 +45,7 @@ export function createUsageTracker({ getLanguage, getStats }) {
         method: "POST",
         mode: "no-cors",
         keepalive: true,
-        headers: { "Content-Type": "text/plain;charset=UTF-8" },
+        headers: { "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8" },
         body,
       }).catch(() => {});
     } catch {
