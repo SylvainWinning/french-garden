@@ -49,4 +49,14 @@ export const situations = [
       be: "Сказаць, што не так, і папрасіць дапамогі.",
     },
   },
+  {
+    id: "nail-salon",
+    category: "Nail salon",
+    phrases: ["i-want-manicure", "what-colors", "i-want-this-color", "short-please", "almond-shape-please", "with-gel-polish"],
+    title: { en: "At the nail salon", be: "У салоне манікюру" },
+    summary: {
+      en: "Ask for a manicure, choose a color, shape, length, and finish.",
+      be: "Папрасіць манікюр, выбраць колер, форму, даўжыню і пакрыццё.",
+    },
+  },
 ];

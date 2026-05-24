@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-smarter-distractors";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-nail-salon-v2";
 
 const STORAGE_KEY = "french-garden-progress";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
@@ -61,7 +61,7 @@ const REWARD_MILESTONES = [
 const LEVEL_CATEGORIES = {
   1: new Set(["Greetings", "Politeness", "Basics", "Home"]),
   2: new Set(["Food", "Daily life", "Time", "Feelings", "Directions"]),
-  3: new Set(["Health", "Places", "Transport", "Descriptions", "Shopping"]),
+  3: new Set(["Health", "Places", "Transport", "Descriptions", "Shopping", "Nail salon"]),
 };
 const CATEGORY_LABELS = {
   en: {
@@ -74,6 +74,7 @@ const CATEGORY_LABELS = {
     Greetings: "Greetings",
     Health: "Health",
     Home: "Home",
+    "Nail salon": "Nail salon",
     Places: "Places",
     Politeness: "Politeness",
     Shopping: "Shopping",
@@ -90,6 +91,7 @@ const CATEGORY_LABELS = {
     Greetings: "Вітанні",
     Health: "Здароўе",
     Home: "Дом",
+    "Nail salon": "Салон манікюру",
     Places: "Месцы",
     Politeness: "Ветлівасць",
     Shopping: "Пакупкі",
