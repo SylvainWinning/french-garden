@@ -30,7 +30,7 @@ Current learning features:
 - Listening practice without any external API.
 - Picture quiz with built-in images.
 - Guided mini-situations for daily life.
-- Reward milestones with a prefilled email message for Sylvain.
+- Reward milestones with a clipboard-ready reward image for Sylvain.
 - Reward photos stored in `assets/rewards`.
 - Random hero photos stored in `assets/hero`.
 - Category progress stored in the browser.

@@ -280,29 +280,6 @@ h3 {
   background: linear-gradient(90deg, var(--pink), var(--mint));
 }
 
-.reward-email {
-  display: grid;
-  gap: 6px;
-}
-
-.reward-email span {
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 900;
-  text-transform: uppercase;
-}
-
-.reward-email input {
-  width: 100%;
-  border: 2px solid var(--line);
-  border-radius: 8px;
-  background: white;
-  color: var(--ink);
-  min-height: 44px;
-  padding: 8px 10px;
-  font-weight: 800;
-}
-
 .reward-list {
   display: grid;
   gap: 8px;
@@ -343,10 +320,16 @@ h3 {
 }
 
 .reward-card span,
-.reward-helper {
+.reward-helper,
+.reward-instructions {
   color: var(--muted);
   font-size: 0.88rem;
   font-weight: 800;
+}
+
+.reward-instructions {
+  margin: 0;
+  line-height: 1.45;
 }
 
 .tabs {
@@ -606,10 +589,6 @@ h3 {
 .reward-actions {
   display: grid;
   gap: 8px;
-}
-
-.disabled-link {
-  opacity: 0.58;
 }
 
 .picture-card {

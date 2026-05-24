@@ -19,17 +19,18 @@ export const uiText = {
     progressTab: "Progress",
     rewardsEyebrow: "Rewards",
     rewardsTitle: "Little rewards from Sylvain",
-    rewardEmailLabel: "Sylvain email",
-    rewardEmailPlaceholder: "name@example.com",
+    rewardListInstructions:
+      "Open an unlocked reward, copy the reward image, then paste it in a message to Sylvain.",
     rewardUnlockedEyebrow: "Reward unlocked",
     rewardForAnswers: "After {count} good answers",
     rewardLocked: "{count} good answers to unlock",
-    sendRewardButton: "Email Sylvain",
-    copyRewardButton: "Copy message",
+    copyRewardButton: "Copy reward image",
+    rewardCopyInstructions:
+      "Tap Copy reward image, then open Messages or WhatsApp and paste it to send it to Sylvain.",
     closeRewardButton: "Close",
-    rewardEmailMissing: "Add Sylvain's email in Progress to send the message.",
-    rewardCopied: "Message copied.",
-    rewardMessageSubject: "French Garden reward unlocked",
+    rewardCopied: "Reward image copied. Now paste it in a message to Sylvain.",
+    rewardCopyFallback:
+      "Image copy is not available here, so the reward text was copied instead.",
     rewardMessageBody:
       "I unlocked this reward in French Garden: {reward}. Good answers: {count}.",
     cardsTab: "Cards",
@@ -100,17 +101,18 @@ export const uiText = {
     progressTab: "Прагрэс",
     rewardsEyebrow: "Узнагароды",
     rewardsTitle: "Маленькія ўзнагароды ад Сільвэна",
-    rewardEmailLabel: "Email Сільвэна",
-    rewardEmailPlaceholder: "name@example.com",
+    rewardListInstructions:
+      "Адкрый узнагароду, скапіруй выяву і ўстаў яе ў паведамленне Сільвэну.",
     rewardUnlockedEyebrow: "Узнагарода адкрыта",
     rewardForAnswers: "Пасля {count} добрых адказаў",
     rewardLocked: "{count} добрых адказаў, каб адкрыць",
-    sendRewardButton: "Напісаць Сільвэну",
-    copyRewardButton: "Скапіраваць паведамленне",
+    copyRewardButton: "Скапіраваць выяву ўзнагароды",
+    rewardCopyInstructions:
+      "Націсні, каб скапіраваць выяву ўзнагароды, потым адкрый Messages або WhatsApp і ўстаў яе для Сільвэна.",
     closeRewardButton: "Закрыць",
-    rewardEmailMissing: "Дадай email Сільвэна ў Progress, каб адправіць паведамленне.",
-    rewardCopied: "Паведамленне скапіравана.",
-    rewardMessageSubject: "Узнагарода ў French Garden адкрыта",
+    rewardCopied: "Выява ўзнагароды скапіравана. Цяпер устаў яе ў паведамленне Сільвэну.",
+    rewardCopyFallback:
+      "Тут нельга скапіраваць выяву, таму тэкст узнагароды быў скапіраваны.",
     rewardMessageBody:
       "Я адкрыла гэтую ўзнагароду ў French Garden: {reward}. Добрых адказаў: {count}.",
     cardsTab: "Карткі",

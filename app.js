@@ -1,7 +1,6 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-hero-photos";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-reward-copy-image";
 
 const STORAGE_KEY = "french-garden-progress";
-const REWARD_EMAIL_KEY = "french-garden-reward-email";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
 const HERO_PHOTOS = [
   "./assets/hero/hero-1.jpg",
@@ -129,13 +128,11 @@ const elements = {
   reviewFilter: document.querySelector("#review-filter"),
   categoryProgress: document.querySelector("#category-progress"),
   heroPhoto: document.querySelector("#hero-photo"),
-  rewardEmail: document.querySelector("#reward-email"),
   rewardList: document.querySelector("#reward-list"),
   rewardModal: document.querySelector("#reward-modal"),
   rewardImage: document.querySelector("#reward-image"),
   rewardModalTitle: document.querySelector("#reward-modal-title"),
   rewardModalText: document.querySelector("#reward-modal-text"),
-  rewardMail: document.querySelector("#reward-mail"),
   rewardCopy: document.querySelector("#reward-copy"),
   rewardClose: document.querySelector("#reward-close"),
   rewardHelper: document.querySelector("#reward-helper"),
@@ -178,7 +175,6 @@ init();
 function init() {
   setRandomHeroPhoto();
   elements.uiLanguage.value = state.uiLanguage;
-  elements.rewardEmail.value = localStorage.getItem(REWARD_EMAIL_KEY) || "";
   populateFilters();
   translateInterface();
   renderStats();
@@ -231,21 +227,8 @@ function bindEvents() {
     resetPracticeViews();
   });
 
-  elements.rewardEmail.addEventListener("input", (event) => {
-    localStorage.setItem(REWARD_EMAIL_KEY, event.target.value.trim());
-    renderRewards();
-    if (state.activeReward) showRewardModal(state.activeReward);
-  });
-
-  elements.rewardCopy.addEventListener("click", copyActiveRewardMessage);
+  elements.rewardCopy.addEventListener("click", copyActiveRewardImage);
   elements.rewardClose.addEventListener("click", closeRewardModal);
-  elements.rewardMail.addEventListener("click", (event) => {
-    if (getRewardEmail()) return;
-
-    event.preventDefault();
-    elements.rewardHelper.textContent = t("rewardEmailMissing");
-    elements.rewardEmail.focus();
-  });
   elements.rewardModal.addEventListener("click", (event) => {
     if (event.target === elements.rewardModal) closeRewardModal();
   });
@@ -823,7 +806,7 @@ function renderRewards() {
         const button = document.createElement("button");
         button.className = "secondary-button";
         button.type = "button";
-        button.textContent = t("sendRewardButton");
+        button.textContent = t("copyRewardButton");
         button.addEventListener("click", () => showRewardModal(milestone));
         card.append(button);
       }
@@ -842,9 +825,7 @@ function showRewardModal(reward) {
   elements.rewardModalText.textContent = formatText(t("rewardForAnswers"), {
     count: reward.answers,
   });
-  elements.rewardMail.href = buildRewardMailto(reward);
-  elements.rewardMail.classList.toggle("disabled-link", !getRewardEmail());
-  elements.rewardHelper.textContent = getRewardEmail() ? "" : t("rewardEmailMissing");
+  elements.rewardHelper.textContent = "";
 }
 
 function closeRewardModal() {
@@ -852,23 +833,133 @@ function closeRewardModal() {
   elements.rewardModal.hidden = true;
 }
 
-async function copyActiveRewardMessage() {
+async function copyActiveRewardImage() {
   if (!state.activeReward) return;
 
   const message = buildRewardMessage(state.activeReward);
   try {
-    await navigator.clipboard.writeText(message);
+    const blob = await createRewardShareImage(state.activeReward);
+    await navigator.clipboard.write([
+      new ClipboardItem({ [blob.type]: blob }),
+    ]);
     elements.rewardHelper.textContent = t("rewardCopied");
   } catch {
-    elements.rewardHelper.textContent = message;
+    try {
+      await navigator.clipboard.writeText(message);
+      elements.rewardHelper.textContent = t("rewardCopyFallback");
+    } catch {
+      elements.rewardHelper.textContent = message;
+    }
   }
 }
 
-function buildRewardMailto(reward) {
-  const email = getRewardEmail();
-  const subject = encodeURIComponent(t("rewardMessageSubject"));
-  const body = encodeURIComponent(buildRewardMessage(reward));
-  return `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
+async function createRewardShareImage(reward) {
+  const width = 900;
+  const height = 1180;
+  const padding = 56;
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const context = canvas.getContext("2d");
+  const image = await loadImage(reward.image);
+
+  context.fillStyle = "#fffafc";
+  context.fillRect(0, 0, width, height);
+
+  drawRoundedRect(context, 24, 24, width - 48, height - 48, 34, "#fff0f7");
+  drawCoverImage(context, image, padding, 190, width - padding * 2, 680, 24);
+
+  context.fillStyle = "#765f7d";
+  context.font = "700 28px system-ui, -apple-system, Segoe UI, sans-serif";
+  context.fillText(t("rewardUnlockedEyebrow").toUpperCase(), padding, 96);
+
+  context.fillStyle = "#a22465";
+  context.font = "800 48px system-ui, -apple-system, Segoe UI, sans-serif";
+  wrapCanvasText(context, getRewardText(reward), padding, 150, width - padding * 2, 56);
+
+  context.fillStyle = "#342238";
+  context.font = "800 34px system-ui, -apple-system, Segoe UI, sans-serif";
+  context.fillText(
+    formatText(t("rewardForAnswers"), { count: reward.answers }),
+    padding,
+    930
+  );
+
+  context.fillStyle = "#765f7d";
+  context.font = "700 28px system-ui, -apple-system, Segoe UI, sans-serif";
+  wrapCanvasText(context, buildRewardMessage(reward), padding, 990, width - padding * 2, 38);
+
+  return new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("Could not create reward image."));
+    }, "image/png");
+  });
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = reject;
+    image.src = src;
+  });
+}
+
+function drawCoverImage(context, image, x, y, width, height, radius) {
+  const imageRatio = image.naturalWidth / image.naturalHeight;
+  const frameRatio = width / height;
+  const drawHeight = imageRatio > frameRatio ? height : width / imageRatio;
+  const drawWidth = imageRatio > frameRatio ? height * imageRatio : width;
+  const drawX = x + (width - drawWidth) / 2;
+  const drawY = y + (height - drawHeight) / 2;
+
+  context.save();
+  roundedPath(context, x, y, width, height, radius);
+  context.clip();
+  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  context.restore();
+}
+
+function drawRoundedRect(context, x, y, width, height, radius, fill) {
+  context.save();
+  roundedPath(context, x, y, width, height, radius);
+  context.fillStyle = fill;
+  context.fill();
+  context.restore();
+}
+
+function roundedPath(context, x, y, width, height, radius) {
+  context.beginPath();
+  context.moveTo(x + radius, y);
+  context.lineTo(x + width - radius, y);
+  context.quadraticCurveTo(x + width, y, x + width, y + radius);
+  context.lineTo(x + width, y + height - radius);
+  context.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+  context.lineTo(x + radius, y + height);
+  context.quadraticCurveTo(x, y + height, x, y + height - radius);
+  context.lineTo(x, y + radius);
+  context.quadraticCurveTo(x, y, x + radius, y);
+  context.closePath();
+}
+
+function wrapCanvasText(context, text, x, y, maxWidth, lineHeight) {
+  const words = text.split(" ");
+  let line = "";
+  let currentY = y;
+
+  words.forEach((word) => {
+    const nextLine = line ? `${line} ${word}` : word;
+    if (context.measureText(nextLine).width > maxWidth && line) {
+      context.fillText(line, x, currentY);
+      line = word;
+      currentY += lineHeight;
+    } else {
+      line = nextLine;
+    }
+  });
+
+  if (line) context.fillText(line, x, currentY);
 }
 
 function buildRewardMessage(reward) {
@@ -880,10 +971,6 @@ function buildRewardMessage(reward) {
 
 function getRewardText(reward) {
   return reward.reward[state.uiLanguage] || reward.reward.en;
-}
-
-function getRewardEmail() {
-  return elements.rewardEmail.value.trim();
 }
 
 function formatText(text, values) {
