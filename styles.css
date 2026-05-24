@@ -337,7 +337,7 @@ h3 {
   top: 0;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: 6px;
   margin: 18px 0 14px;
   padding: 8px;
@@ -463,7 +463,7 @@ h3 {
 
 .card-actions {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 8px;
   width: 100%;
 }
@@ -825,9 +825,42 @@ h3 {
   }
 }
 
-@media (max-width: 420px) {
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 12px 10px 28px;
+  }
+
   .topbar {
     display: grid;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  h1 {
+    font-size: 2.1rem;
+  }
+
+  .hero-panel {
+    grid-template-columns: minmax(0, 1fr) 74px;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+    padding: 10px;
+  }
+
+  .hero-panel .pill,
+  .hero-panel p:not(.pill) {
+    display: none;
+  }
+
+  .hero-panel h2 {
+    margin: 0;
+    font-size: 1.05rem;
+  }
+
+  .hero-photo-frame {
+    width: 74px;
+    aspect-ratio: 1;
   }
 
   .language-picker {
@@ -835,21 +868,81 @@ h3 {
     grid-template-columns: 1fr;
   }
 
-  .stats-grid span {
-    font-size: 0.72rem;
+  .stats-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 5px;
+    margin: 8px 0;
   }
 
-  .stats-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .stats-grid div {
+    gap: 2px;
+    padding: 7px 4px;
+  }
+
+  .stats-grid span {
+    min-height: 0;
+    font-size: 0.62rem;
+  }
+
+  .stats-grid strong {
+    font-size: 1.05rem;
+  }
+
+  .filter-panel {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 7px;
+    margin-bottom: 8px;
+    padding: 8px;
+  }
+
+  .filter-panel select,
+  .review-toggle {
+    min-height: 38px;
+  }
+
+  .filter-panel span {
+    font-size: 0.66rem;
+  }
+
+  .review-toggle {
+    grid-column: 1 / -1;
+    justify-content: center;
   }
 
   .tab {
-    min-height: 48px;
-    font-size: 0.84rem;
+    min-width: max-content;
+    min-height: 38px;
+    padding: 8px 11px;
+    font-size: 0.78rem;
   }
 
   .tabs {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    display: flex;
+    gap: 5px;
+    overflow-x: auto;
+    margin: 8px -10px 10px;
+    padding: 7px 10px;
+    border-left: 0;
+    border-right: 0;
+    border-radius: 0;
+    scrollbar-width: none;
+  }
+
+  .tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .section-heading {
+    margin-bottom: 8px;
+  }
+
+  .flashcard,
+  .challenge-card {
+    padding: 14px;
+  }
+
+  .flashcard {
+    min-height: 250px;
   }
 
   .card-actions {

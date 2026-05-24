@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-progress-reset-v2";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-mobile-filters-v3";
 
 const STORAGE_KEY = "french-garden-progress-clean-start-20260524";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
@@ -16,44 +16,44 @@ const HERO_PHOTOS = [
 ];
 const REWARD_MILESTONES = [
   {
-    id: "kiss-5",
-    answers: 5,
+    id: "kiss-20",
+    answers: 20,
     image: "./assets/rewards/reward-1.jpg",
     reward: { en: "a kiss from Sylvain", be: "пацалунак ад Сільвэна" },
   },
   {
-    id: "hug-10",
-    answers: 10,
+    id: "hug-45",
+    answers: 45,
     image: "./assets/rewards/reward-5.jpg",
     reward: { en: "a big hug from Sylvain", be: "моцныя абдымкі ад Сільвэна" },
   },
   {
-    id: "tea-20",
-    answers: 20,
+    id: "tea-75",
+    answers: 75,
     image: "./assets/rewards/reward-6.jpg",
     reward: { en: "tea together", be: "гарбата разам" },
   },
   {
-    id: "dessert-35",
-    answers: 35,
+    id: "dessert-110",
+    answers: 110,
     image: "./assets/rewards/reward-3.jpg",
     reward: { en: "a dessert chosen by her", be: "дэсерт, які яна выбірае" },
   },
   {
-    id: "movie-50",
-    answers: 50,
+    id: "movie-150",
+    answers: 150,
     image: "./assets/rewards/reward-7.jpg",
     reward: { en: "a movie night together", be: "вечар кіно разам" },
   },
   {
-    id: "walk-75",
-    answers: 75,
+    id: "walk-200",
+    answers: 200,
     image: "./assets/rewards/reward-4.jpg",
     reward: { en: "a sweet walk together", be: "мілая прагулка разам" },
   },
   {
-    id: "date-100",
-    answers: 100,
+    id: "date-275",
+    answers: 275,
     image: "./assets/rewards/reward-2.jpg",
     reward: { en: "a little date planned by Sylvain", be: "маленькае спатканне ад Сільвэна" },
   },
@@ -108,13 +108,12 @@ const state = {
   reviewOnly: false,
   recentQuizIds: [],
   recentPictureIds: [],
-  recentListenIds: [],
   quizItem: null,
   pictureItem: null,
-  listenItem: null,
   phraseItem: null,
   selectedMatch: null,
   matchedIds: new Set(),
+  matchRoundSize: 0,
   activeReward: null,
   progress: loadProgress(),
 };
@@ -150,7 +149,6 @@ const elements = {
   nextCard: document.querySelector("#next-card"),
   knowCard: document.querySelector("#know-card"),
   reviewCard: document.querySelector("#review-card"),
-  speakCard: document.querySelector("#speak-card"),
   quizWord: document.querySelector("#quiz-word"),
   quizOptions: document.querySelector("#quiz-options"),
   quizFeedback: document.querySelector("#quiz-feedback"),
@@ -165,10 +163,6 @@ const elements = {
   phraseText: document.querySelector("#phrase-text"),
   phraseOptions: document.querySelector("#phrase-options"),
   phraseFeedback: document.querySelector("#phrase-feedback"),
-  speakPhrase: document.querySelector("#speak-phrase"),
-  playListen: document.querySelector("#play-listen"),
-  listenOptions: document.querySelector("#listen-options"),
-  listenFeedback: document.querySelector("#listen-feedback"),
   situationsBoard: document.querySelector("#situations-board"),
 };
 
@@ -187,7 +181,6 @@ function init() {
   nextPicture();
   resetMatch();
   nextPhrase();
-  nextListening();
   renderSituations();
   bindEvents();
 }
@@ -244,16 +237,8 @@ function bindEvents() {
   elements.nextCard.addEventListener("click", nextCard);
   elements.knowCard.addEventListener("click", () => markCard(true));
   elements.reviewCard.addEventListener("click", () => markCard(false));
-  elements.speakCard.addEventListener("click", (event) => {
-    event.stopPropagation();
-    speak(getCurrentCard().french);
-  });
 
   elements.resetMatch.addEventListener("click", resetMatch);
-  elements.speakPhrase.addEventListener("click", () => speak(state.phraseItem.text));
-  elements.playListen.addEventListener("click", () => {
-    if (state.listenItem) speak(state.listenItem.french);
-  });
 }
 
 function translateInterface() {
@@ -330,7 +315,8 @@ function nextQuiz() {
   rememberRecent(state.recentQuizIds, state.quizItem.id);
   elements.quizWord.textContent = state.quizItem.french;
   elements.quizFeedback.textContent = "";
-  const wrongOptions = getDistractorTranslations(state.quizItem, 3);
+  const answerCount = getAnswerOptionCount(state.quizItem);
+  const wrongOptions = getDistractorTranslations(state.quizItem, answerCount - 1);
   const options = shuffle([
     state.quizItem.translations[state.uiLanguage],
     ...wrongOptions,
@@ -359,7 +345,8 @@ function answerQuiz(option) {
 }
 
 function nextPicture() {
-  state.pictureItem = pickWithoutRecent(pictureItems, state.recentPictureIds);
+  const pool = getPracticePictures();
+  state.pictureItem = pickWithoutRecent(pool.length ? pool : pictureItems, state.recentPictureIds);
   rememberRecent(state.recentPictureIds, state.pictureItem.id);
   renderPicture();
 }
@@ -373,11 +360,10 @@ function renderPicture() {
   elements.pictureFeedback.textContent = "";
   elements.pictureFeedback.className = "feedback";
 
-  const wrongOptions = shuffle(
-    pictureItems
-      .filter((picture) => picture.id !== item.id)
-      .map((picture) => picture.french)
-  ).slice(0, 3);
+  const wrongOptions = getPictureDistractorPool(item)
+    .filter((picture) => picture.id !== item.id)
+    .slice(0, getPictureOptionCount(item) - 1)
+    .map((picture) => picture.french);
   const options = shuffle([item.french, ...wrongOptions]);
 
   elements.pictureOptions.replaceChildren(
@@ -394,10 +380,11 @@ function renderPicture() {
 
 function answerPicture(optionText) {
   const isCorrect = optionText === state.pictureItem.french;
-  updateScore(isCorrect, state.pictureItem.id);
+  const progressId = getVocabularyIdByFrench(state.pictureItem.french);
+  updateScore(isCorrect, progressId);
   elements.pictureFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
   elements.pictureFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
-  recordAttempt(state.pictureItem.id, isCorrect);
+  recordAttempt(progressId, isCorrect);
   if (isCorrect) celebrate(elements.pictureFeedback);
   if (isCorrect) window.setTimeout(nextPicture, 850);
 }
@@ -406,7 +393,8 @@ function resetMatch() {
   state.selectedMatch = null;
   state.matchedIds = new Set();
   const pool = getPracticeVocabulary();
-  const roundItems = shuffle(pool.length >= 5 ? pool : vocabulary).slice(0, 5);
+  const roundItems = shuffle(pool.length ? pool : vocabulary).slice(0, Math.min(5, pool.length || 5));
+  state.matchRoundSize = roundItems.length;
   const frenchCards = shuffle(
     roundItems.map((item) => ({ id: item.id, type: "fr", label: item.french }))
   );
@@ -420,43 +408,6 @@ function resetMatch() {
 
   elements.matchFrenchRow.replaceChildren(...frenchCards.map(createMatchTile));
   elements.matchMeaningRow.replaceChildren(...meaningCards.map(createMatchTile));
-}
-
-function nextListening() {
-  const pool = getPracticeVocabulary();
-  state.listenItem = pickWithoutRecent(pool.length ? pool : vocabulary, state.recentListenIds);
-  rememberRecent(state.recentListenIds, state.listenItem.id);
-  renderListening();
-}
-
-function renderListening() {
-  const item = state.listenItem;
-  if (!item) return;
-
-  elements.listenFeedback.textContent = "";
-  const wrongOptions = getDistractorTranslations(item, 3);
-  const options = shuffle([item.translations[state.uiLanguage], ...wrongOptions]);
-
-  elements.listenOptions.replaceChildren(
-    ...options.map((optionText) => {
-      const button = document.createElement("button");
-      button.className = "answer-button";
-      button.type = "button";
-      button.textContent = optionText;
-      button.addEventListener("click", () => answerListening(optionText));
-      return button;
-    })
-  );
-}
-
-function answerListening(optionText) {
-  const isCorrect = optionText === state.listenItem.translations[state.uiLanguage];
-  updateScore(isCorrect, state.listenItem.id);
-  elements.listenFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
-  elements.listenFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
-  recordAttempt(state.listenItem.id, isCorrect);
-  if (isCorrect) celebrate(elements.listenFeedback);
-  if (isCorrect) window.setTimeout(nextListening, 850);
 }
 
 function chooseMatch(button, card) {
@@ -479,7 +430,6 @@ function chooseMatch(button, card) {
     updateScore(true, card.id);
     recordAttempt(card.id, true);
     celebrate(button);
-    speak(card.type === "fr" ? card.label : first.card.label);
   } else {
     button.classList.add("selected", "shake");
     first.button.classList.add("shake");
@@ -493,7 +443,7 @@ function chooseMatch(button, card) {
 
   state.selectedMatch = null;
 
-  if (state.matchedIds.size === 5) {
+  if (state.matchedIds.size === state.matchRoundSize) {
     window.setTimeout(resetMatch, 900);
   }
 }
@@ -538,7 +488,6 @@ function answerPhrase(option) {
   elements.phraseFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   if (isCorrect) {
     celebrate(elements.phraseFeedback);
-    speak(state.phraseItem.text);
     window.setTimeout(nextPhrase, 1000);
   }
 }
@@ -568,7 +517,6 @@ function renderSituations() {
           row.type = "button";
           row.className = "situation-line";
           row.innerHTML = `<strong>${phrase.text}</strong><span>${phrase.translations[state.uiLanguage]}</span>`;
-          row.addEventListener("click", () => speak(phrase.text));
           return row;
         })
       );
@@ -664,16 +612,6 @@ function recordAttempt(id, isCorrect) {
   renderProgress();
 }
 
-function speak(text) {
-  if (!("speechSynthesis" in window)) return;
-
-  window.speechSynthesis.cancel();
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "fr-FR";
-  utterance.rate = 0.85;
-  window.speechSynthesis.speak(utterance);
-}
-
 function loadProgress() {
   const fallback = {
     score: 0,
@@ -743,7 +681,6 @@ function resetPracticeViews() {
   nextQuiz();
   nextPicture();
   resetMatch();
-  nextListening();
   renderStats();
   renderProgress();
 }
@@ -983,6 +920,18 @@ function getPracticeVocabulary() {
   return filtered;
 }
 
+function getPracticePictures() {
+  const reviewIds = new Set(getReviewIds());
+  return pictureItems.filter((item) => {
+    const levelMatches =
+      state.levelFilter === "all" || String(getWordLevel(item)) === state.levelFilter;
+    const categoryMatches =
+      state.categoryFilter === "all" || item.category === state.categoryFilter;
+    const reviewMatches = !state.reviewOnly || reviewIds.has(getVocabularyIdByFrench(item.french));
+    return levelMatches && categoryMatches && reviewMatches;
+  });
+}
+
 function getCurrentCard() {
   const pool = getPracticeVocabulary();
   return pool[state.cardIndex] || pool[0];
@@ -1006,6 +955,10 @@ function getWordLevel(item) {
 
 function getCategoryLabel(category) {
   return CATEGORY_LABELS[state.uiLanguage]?.[category] || category;
+}
+
+function getVocabularyIdByFrench(french) {
+  return vocabulary.find((item) => item.french === french)?.id || french;
 }
 
 function option(value, label) {
@@ -1046,6 +999,25 @@ function getDistractorTranslations(correctItem, count) {
     .filter(uniqueById())
     .slice(0, count)
     .map((item) => item.translations[state.uiLanguage]);
+}
+
+function getAnswerOptionCount(item) {
+  return Math.min(6, 3 + getWordLevel(item));
+}
+
+function getPictureOptionCount(item) {
+  if (state.categoryFilter !== "all") {
+    return Math.min(5, pictureItems.filter((picture) => picture.category === item.category).length);
+  }
+
+  return Math.min(5, 3 + getWordLevel(item));
+}
+
+function getPictureDistractorPool(correctItem) {
+  return [
+    ...shuffle(pictureItems.filter((item) => item.category === correctItem.category)),
+    ...shuffle(pictureItems.filter((item) => item.category !== correctItem.category)),
+  ].filter(uniqueById());
 }
 
 function pickDistractorGroup(candidates, correctItem, sameCategory, sameAnswerShape) {
