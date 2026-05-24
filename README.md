@@ -12,6 +12,13 @@ Open `data.js` and edit:
 - `phrases` for sentence completion practice.
 - `uiText` for the app interface in English and Belarusian.
 
+Current content:
+
+- 84 vocabulary items.
+- 47 phrase exercises.
+- 14 vocabulary categories.
+- 5 vocabulary pairs per matching round.
+
 Each vocabulary item needs:
 
 ```js
