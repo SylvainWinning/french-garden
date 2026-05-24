@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta
+      name="description"
+      content="A playful offline French practice app for beginners."
+    />
+    <title>French Garden</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23ff6fae'/%3E%3Ccircle cx='32' cy='32' r='20' fill='%23fffafc'/%3E%3Cpath d='M22 35q10 10 20 0' fill='none' stroke='%23ff6fae' stroke-width='5' stroke-linecap='round'/%3E%3Ccircle cx='25' cy='27' r='4' fill='%23342238'/%3E%3Ccircle cx='39' cy='27' r='4' fill='%23342238'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow" data-i18n="appLabel">French practice</p>
+          <h1 data-i18n="title">French Garden</h1>
+        </div>
+
+        <label class="language-picker">
+          <span data-i18n="languageLabel">App language</span>
+          <select id="ui-language">
+            <option value="en">English</option>
+            <option value="fr">Français</option>
+            <option value="be">Беларуская</option>
+          </select>
+        </label>
+      </header>
+
+      <main>
+        <section class="hero-panel">
+          <div>
+            <p class="pill" data-i18n="levelPill">Beginner friendly</p>
+            <h2 data-i18n="heroTitle">Tiny French steps, every day.</h2>
+            <p data-i18n="heroCopy">
+              Learn useful words, simple phrases, listening, and pronunciation
+              in short playful rounds.
+            </p>
+          </div>
+          <div class="mascot" aria-hidden="true">
+            <span>bonjour</span>
+            <div class="face">
+              <i></i>
+              <i></i>
+              <b></b>
+            </div>
+          </div>
+        </section>
+
+        <section class="stats-grid" aria-live="polite">
+          <div>
+            <span data-i18n="scoreLabel">Score</span>
+            <strong id="score">0</strong>
+          </div>
+          <div>
+            <span data-i18n="streakLabel">Good answers</span>
+            <strong id="streak">0</strong>
+          </div>
+          <div>
+            <span data-i18n="learnedLabel">Practiced</span>
+            <strong id="practiced">0</strong>
+          </div>
+        </section>
+
+        <nav class="tabs" aria-label="Practice sections">
+          <button class="tab active" type="button" data-view="cards">
+            <span data-i18n="cardsTab">Cards</span>
+          </button>
+          <button class="tab" type="button" data-view="quiz">
+            <span data-i18n="quizTab">Quiz</span>
+          </button>
+          <button class="tab" type="button" data-view="match">
+            <span data-i18n="matchTab">Match</span>
+          </button>
+          <button class="tab" type="button" data-view="phrases">
+            <span data-i18n="phrasesTab">Phrases</span>
+          </button>
+        </nav>
+
+        <section id="cards" class="view active-view" aria-labelledby="cards-tab">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="cardsEyebrow">Vocabulary</p>
+              <h2 data-i18n="cardsTitle">Tap, listen, remember</h2>
+            </div>
+            <button id="shuffle-card" class="icon-button" type="button" title="New card">
+              ↻
+            </button>
+          </div>
+
+          <article class="flashcard" id="flashcard" tabindex="0">
+            <p id="card-category"></p>
+            <h3 id="card-french"></h3>
+            <p id="card-translation"></p>
+            <button id="speak-card" class="primary-button" type="button">
+              <span data-i18n="listenButton">Listen</span>
+            </button>
+          </article>
+        </section>
+
+        <section id="quiz" class="view" aria-labelledby="quiz-tab">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="quizEyebrow">Quick quiz</p>
+              <h2 data-i18n="quizTitle">Choose the meaning</h2>
+            </div>
+          </div>
+
+          <article class="challenge-card">
+            <p class="prompt" data-i18n="quizPrompt">What does this mean?</p>
+            <h3 id="quiz-word"></h3>
+            <div id="quiz-options" class="option-grid"></div>
+            <p id="quiz-feedback" class="feedback"></p>
+          </article>
+        </section>
+
+        <section id="match" class="view" aria-labelledby="match-tab">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="matchEyebrow">Memory match</p>
+              <h2 data-i18n="matchTitle">Pair French with meaning</h2>
+            </div>
+            <button id="reset-match" class="secondary-button" type="button">
+              <span data-i18n="resetButton">Reset</span>
+            </button>
+          </div>
+
+          <div id="match-board" class="match-board"></div>
+        </section>
+
+        <section id="phrases" class="view" aria-labelledby="phrases-tab">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="phrasesEyebrow">Useful phrases</p>
+              <h2 data-i18n="phrasesTitle">Complete the sentence</h2>
+            </div>
+          </div>
+
+          <article class="challenge-card">
+            <p id="phrase-translation" class="prompt"></p>
+            <h3 id="phrase-text"></h3>
+            <div id="phrase-options" class="option-grid"></div>
+            <button id="speak-phrase" class="primary-button" type="button">
+              <span data-i18n="listenPhraseButton">Hear phrase</span>
+            </button>
+            <p id="phrase-feedback" class="feedback"></p>
+          </article>
+        </section>
+      </main>
+    </div>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
