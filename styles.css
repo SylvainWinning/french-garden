@@ -192,7 +192,7 @@ h3 {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
   margin: 14px 0;
 }
@@ -218,6 +218,98 @@ h3 {
   color: #a22465;
   font-size: 1.45rem;
   line-height: 1;
+}
+
+.filter-panel,
+.progress-panel {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 250, 252, 0.78);
+  padding: 12px;
+}
+
+.filter-panel {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.filter-panel label {
+  display: grid;
+  gap: 6px;
+}
+
+.filter-panel span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.filter-panel select {
+  width: 100%;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 8px 10px;
+  font-weight: 800;
+}
+
+.review-toggle {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  min-height: 44px;
+}
+
+.review-toggle input {
+  width: 22px;
+  height: 22px;
+  accent-color: var(--pink);
+}
+
+.progress-panel {
+  margin-bottom: 14px;
+}
+
+.category-progress {
+  display: grid;
+  gap: 10px;
+}
+
+.progress-row {
+  display: grid;
+  gap: 6px;
+}
+
+.progress-row div {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.progress-row strong {
+  color: var(--ink);
+}
+
+.progress-track {
+  display: block;
+  overflow: hidden;
+  height: 9px;
+  border-radius: 999px;
+  background: rgba(118, 95, 125, 0.14);
+}
+
+.progress-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--pink), var(--mint));
 }
 
 .tabs {
@@ -275,6 +367,13 @@ h3 {
   margin-bottom: 12px;
 }
 
+.section-count {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .icon-button,
 .secondary-button {
   border: 1px solid var(--line);
@@ -301,16 +400,23 @@ h3 {
   display: grid;
   min-height: 330px;
   place-items: center;
+  gap: 12px;
   text-align: center;
 }
 
-.flashcard p:first-child {
+.flashcard p:first-child,
+.flashcard p:nth-child(2) {
   margin: 0;
   border-radius: 999px;
   background: #e9fff6;
   color: #25785b;
   padding: 7px 11px;
   font-weight: 900;
+}
+
+.flashcard p:first-child {
+  background: var(--pink-soft);
+  color: #a22465;
 }
 
 .flashcard h3 {
@@ -331,6 +437,35 @@ h3 {
   color: white;
   padding: 13px 16px;
   box-shadow: 0 10px 22px rgba(255, 111, 174, 0.26);
+}
+
+.card-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  width: 100%;
+}
+
+.card-actions:last-child {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.success-button,
+.warning-button {
+  border: 0;
+  border-radius: 8px;
+  color: var(--ink);
+  cursor: pointer;
+  font-weight: 900;
+  padding: 12px 10px;
+}
+
+.success-button {
+  background: #dffbee;
+}
+
+.warning-button {
+  background: #fff0c7;
 }
 
 .prompt {
@@ -429,6 +564,11 @@ h3 {
     padding: 24px;
   }
 
+  .filter-panel {
+    grid-template-columns: 1fr 1fr auto;
+    align-items: end;
+  }
+
   .mascot {
     min-height: 190px;
   }
@@ -461,8 +601,20 @@ h3 {
     font-size: 0.72rem;
   }
 
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .tab {
     min-height: 48px;
     font-size: 0.84rem;
+  }
+
+  .card-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .card-actions:last-child {
+    grid-template-columns: 1fr;
   }
 }

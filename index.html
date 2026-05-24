@@ -64,6 +64,35 @@
             <span data-i18n="learnedLabel">Practiced</span>
             <strong id="practiced">0</strong>
           </div>
+          <div>
+            <span data-i18n="reviewLabel">To review</span>
+            <strong id="review-count">0</strong>
+          </div>
+        </section>
+
+        <section class="filter-panel" aria-label="Practice filters">
+          <label>
+            <span data-i18n="levelFilterLabel">Level</span>
+            <select id="level-filter"></select>
+          </label>
+          <label>
+            <span data-i18n="categoryFilterLabel">Category</span>
+            <select id="category-filter"></select>
+          </label>
+          <label class="review-toggle">
+            <input id="review-filter" type="checkbox" />
+            <span data-i18n="reviewOnlyLabel">Review only</span>
+          </label>
+        </section>
+
+        <section class="progress-panel">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="progressEyebrow">Progress</p>
+              <h2 data-i18n="progressTitle">Practice by category</h2>
+            </div>
+          </div>
+          <div id="category-progress" class="category-progress"></div>
         </section>
 
         <nav class="tabs" aria-label="Practice sections">
@@ -86,19 +115,43 @@
             <div>
               <p class="eyebrow" data-i18n="cardsEyebrow">Vocabulary</p>
               <h2 data-i18n="cardsTitle">Tap, listen, remember</h2>
+              <p id="cards-count" class="section-count"></p>
             </div>
-            <button id="shuffle-card" class="icon-button" type="button" title="New card">
-              ↻
+            <button
+              id="shuffle-card"
+              class="icon-button"
+              type="button"
+              data-i18n-title="newCardTitle"
+              title="New card"
+            >
+              ⇄
             </button>
           </div>
 
           <article class="flashcard" id="flashcard" tabindex="0">
+            <p id="card-level"></p>
             <p id="card-category"></p>
             <h3 id="card-french"></h3>
             <p id="card-translation"></p>
-            <button id="speak-card" class="primary-button" type="button">
-              <span data-i18n="listenButton">Listen</span>
-            </button>
+            <div class="card-actions">
+              <button id="previous-card" class="secondary-button" type="button">
+                <span data-i18n="previousButton">Previous</span>
+              </button>
+              <button id="speak-card" class="primary-button" type="button">
+                <span data-i18n="listenButton">Listen</span>
+              </button>
+              <button id="next-card" class="secondary-button" type="button">
+                <span data-i18n="nextButton">Next</span>
+              </button>
+            </div>
+            <div class="card-actions">
+              <button id="know-card" class="success-button" type="button">
+                <span data-i18n="knowButton">I know it</span>
+              </button>
+              <button id="review-card" class="warning-button" type="button">
+                <span data-i18n="reviewButton">Review later</span>
+              </button>
+            </div>
           </article>
         </section>
 
@@ -107,6 +160,7 @@
             <div>
               <p class="eyebrow" data-i18n="quizEyebrow">Quick quiz</p>
               <h2 data-i18n="quizTitle">Choose the meaning</h2>
+              <p id="quiz-count" class="section-count"></p>
             </div>
           </div>
 
@@ -123,6 +177,7 @@
             <div>
               <p class="eyebrow" data-i18n="matchEyebrow">Memory match</p>
               <h2 data-i18n="matchTitle">Pair French with meaning</h2>
+              <p id="match-count" class="section-count"></p>
             </div>
             <button id="reset-match" class="secondary-button" type="button">
               <span data-i18n="resetButton">Reset</span>
@@ -137,6 +192,7 @@
             <div>
               <p class="eyebrow" data-i18n="phrasesEyebrow">Useful phrases</p>
               <h2 data-i18n="phrasesTitle">Complete the sentence</h2>
+              <p id="phrases-count" class="section-count"></p>
             </div>
           </div>
 

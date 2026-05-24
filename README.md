@@ -19,6 +19,13 @@ Current content:
 - 14 vocabulary categories.
 - 5 vocabulary pairs per matching round.
 
+Current learning features:
+
+- Level and category filters for focused practice.
+- Review-only mode for words marked difficult.
+- Category progress stored in the browser.
+- "I know it" and "Review later" actions on flashcards.
+
 Each vocabulary item needs:
 
 ```js
