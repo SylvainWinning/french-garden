@@ -277,7 +277,7 @@ function answerQuiz(option) {
   elements.quizFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   recordAttempt(state.quizItem.id, isCorrect);
   if (isCorrect) celebrate(elements.quizFeedback);
-  window.setTimeout(nextQuiz, isCorrect ? 850 : 1200);
+  if (isCorrect) window.setTimeout(nextQuiz, 850);
 }
 
 function nextPicture() {
@@ -321,7 +321,7 @@ function answerPicture(optionText) {
   elements.pictureFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   recordAttempt(state.pictureItem.id, isCorrect);
   if (isCorrect) celebrate(elements.pictureFeedback);
-  window.setTimeout(nextPicture, isCorrect ? 850 : 1200);
+  if (isCorrect) window.setTimeout(nextPicture, 850);
 }
 
 function resetMatch() {
@@ -383,7 +383,7 @@ function answerListening(optionText) {
   elements.listenFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   recordAttempt(state.listenItem.id, isCorrect);
   if (isCorrect) celebrate(elements.listenFeedback);
-  window.setTimeout(nextListening, isCorrect ? 850 : 1200);
+  if (isCorrect) window.setTimeout(nextListening, 850);
 }
 
 function chooseMatch(button, card) {
