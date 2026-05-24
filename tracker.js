@@ -1,4 +1,7 @@
+// Paste the deployed Google Apps Script Web app URL here.
+// Example: https://script.google.com/macros/s/AKfycb.../exec
 const TRACKING_ENDPOINT = "";
+const HAS_TRACKING_ENDPOINT = TRACKING_ENDPOINT.startsWith("https://script.google.com/");
 const CLIENT_ID_KEY = "french-garden-tracker-client-id";
 const HEARTBEAT_INTERVAL_MS = 3 * 60 * 1000;
 
@@ -8,7 +11,7 @@ export function createUsageTracker({ getLanguage, getStats }) {
   let heartbeatId = null;
 
   function track(eventType, details = {}) {
-    if (!TRACKING_ENDPOINT) return;
+    if (!HAS_TRACKING_ENDPOINT) return;
 
     const stats = getStats();
     const payload = {
@@ -48,7 +51,7 @@ export function createUsageTracker({ getLanguage, getStats }) {
   }
 
   function startHeartbeat() {
-    if (!TRACKING_ENDPOINT || heartbeatId) return;
+    if (!HAS_TRACKING_ENDPOINT || heartbeatId) return;
     heartbeatId = window.setInterval(() => {
       track("session_ping");
     }, HEARTBEAT_INTERVAL_MS);

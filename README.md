@@ -60,6 +60,13 @@ The app can send invisible usage events to a private Google Sheet. Tracking is
 off until an endpoint is configured, and failures are ignored so the app keeps
 working offline.
 
+Status:
+
+- The published app already contains the reset progress key.
+- The private tracker Sheet is created.
+- Tracking remains inactive until the deployed Apps Script URL is pasted into
+  `TRACKING_ENDPOINT` in `tracker.js`.
+
 Setup:
 
 1. Use the private tracker Sheet:
@@ -68,6 +75,10 @@ Setup:
 3. Paste the contents of `google-apps-script-tracker.js`.
 4. Deploy it as a Web app with access set to "Anyone".
 5. Copy the Web app URL into `TRACKING_ENDPOINT` in `tracker.js`.
+6. Commit and push the updated `tracker.js`.
+
+After setup, open the app once and answer a question. The Sheet should receive
+at least one `session_start` row and one `answer` row.
 
 Events currently logged:
 
