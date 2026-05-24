@@ -196,7 +196,7 @@ function showView(viewName) {
 
 function renderStats() {
   elements.score.textContent = state.progress.score;
-  elements.streak.textContent = state.progress.streak;
+  elements.streak.textContent = state.progress.correctAnswers;
   elements.practiced.textContent = state.progress.practiced.length;
   elements.reviewCount.textContent = getReviewIds().length;
 }
@@ -507,14 +507,15 @@ function renderSituations() {
 function updateScore(isCorrect, id) {
   if (isCorrect) {
     state.progress.score += 10;
-    state.progress.streak += 1;
+    state.progress.correctAnswers += 1;
+    state.progress.currentStreak += 1;
     state.progress.bestStreak = Math.max(
       state.progress.bestStreak,
-      state.progress.streak
+      state.progress.currentStreak
     );
     markPracticed(id);
   } else {
-    state.progress.streak = 0;
+    state.progress.currentStreak = 0;
   }
 
   saveProgress();
@@ -522,7 +523,9 @@ function updateScore(isCorrect, id) {
 }
 
 function getSuccessMessage() {
-  return state.progress.streak > 1 ? `${t("correct")} ${t("combo")}` : t("correct");
+  return state.progress.currentStreak > 1
+    ? `${t("correct")} ${t("combo")}`
+    : t("correct");
 }
 
 function celebrate(anchor) {
@@ -582,10 +585,29 @@ function speak(text) {
 }
 
 function loadProgress() {
-  const fallback = { score: 0, streak: 0, bestStreak: 0, practiced: [], words: {} };
+  const fallback = {
+    score: 0,
+    correctAnswers: 0,
+    currentStreak: 0,
+    bestStreak: 0,
+    practiced: [],
+    words: {},
+  };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
-    return { ...fallback, ...saved, words: saved?.words || {} };
+    const progress = { ...fallback, ...saved, words: saved?.words || {} };
+    const legacyStreak = Number.isFinite(saved?.streak) ? saved.streak : 0;
+    const scoreAnswers = Math.floor((progress.score || 0) / 10);
+
+    if (!Number.isFinite(saved?.correctAnswers)) {
+      progress.correctAnswers = Math.max(legacyStreak, scoreAnswers);
+    }
+
+    if (!Number.isFinite(saved?.currentStreak)) {
+      progress.currentStreak = legacyStreak;
+    }
+
+    return progress;
   } catch {
     return fallback;
   }
