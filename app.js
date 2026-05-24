@@ -1,8 +1,20 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-reward-images";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-hero-photos";
 
 const STORAGE_KEY = "french-garden-progress";
 const REWARD_EMAIL_KEY = "french-garden-reward-email";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
+const HERO_PHOTOS = [
+  "./assets/hero/hero-1.jpg",
+  "./assets/hero/hero-2.jpg",
+  "./assets/hero/hero-3.jpg",
+  "./assets/hero/hero-4.jpg",
+  "./assets/hero/hero-5.jpg",
+  "./assets/hero/hero-6.jpg",
+  "./assets/hero/hero-7.jpg",
+  "./assets/hero/hero-8.jpg",
+  "./assets/hero/hero-9.jpg",
+  "./assets/hero/hero-10.jpg",
+];
 const REWARD_MILESTONES = [
   {
     id: "kiss-5",
@@ -116,6 +128,7 @@ const elements = {
   categoryFilter: document.querySelector("#category-filter"),
   reviewFilter: document.querySelector("#review-filter"),
   categoryProgress: document.querySelector("#category-progress"),
+  heroPhoto: document.querySelector("#hero-photo"),
   rewardEmail: document.querySelector("#reward-email"),
   rewardList: document.querySelector("#reward-list"),
   rewardModal: document.querySelector("#reward-modal"),
@@ -163,6 +176,7 @@ const elements = {
 init();
 
 function init() {
+  setRandomHeroPhoto();
   elements.uiLanguage.value = state.uiLanguage;
   elements.rewardEmail.value = localStorage.getItem(REWARD_EMAIL_KEY) || "";
   populateFilters();
@@ -178,6 +192,10 @@ function init() {
   nextListening();
   renderSituations();
   bindEvents();
+}
+
+function setRandomHeroPhoto() {
+  elements.heroPhoto.src = randomItem(HERO_PHOTOS);
 }
 
 function bindEvents() {
