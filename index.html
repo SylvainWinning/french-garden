@@ -96,11 +96,14 @@
         </section>
 
         <nav class="tabs" aria-label="Practice sections">
-          <button class="tab active" type="button" data-view="cards">
-            <span data-i18n="cardsTab">Cards</span>
-          </button>
-          <button class="tab" type="button" data-view="quiz">
+          <button class="tab active" type="button" data-view="quiz">
             <span data-i18n="quizTab">Quiz</span>
+          </button>
+          <button class="tab" type="button" data-view="pictures">
+            <span data-i18n="picturesTab">Pictures</span>
+          </button>
+          <button class="tab" type="button" data-view="cards">
+            <span data-i18n="cardsTab">Cards</span>
           </button>
           <button class="tab" type="button" data-view="match">
             <span data-i18n="matchTab">Match</span>
@@ -116,7 +119,7 @@
           </button>
         </nav>
 
-        <section id="cards" class="view active-view" aria-labelledby="cards-tab">
+        <section id="cards" class="view" aria-labelledby="cards-tab">
           <div class="section-heading">
             <div>
               <p class="eyebrow" data-i18n="cardsEyebrow">Vocabulary</p>
@@ -160,7 +163,7 @@
           </article>
         </section>
 
-        <section id="quiz" class="view" aria-labelledby="quiz-tab">
+        <section id="quiz" class="view active-view" aria-labelledby="quiz-tab">
           <div class="section-heading">
             <div>
               <p class="eyebrow" data-i18n="quizEyebrow">Quick quiz</p>
@@ -176,6 +179,24 @@
           </article>
         </section>
 
+        <section id="pictures" class="view" aria-labelledby="pictures-tab">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="picturesEyebrow">Picture quiz</p>
+              <h2 data-i18n="picturesTitle">Look, then pick French</h2>
+            </div>
+          </div>
+
+          <article class="challenge-card picture-card">
+            <p class="prompt" data-i18n="picturesPrompt">
+              What is this in French?
+            </p>
+            <img id="picture-image" class="picture-image" alt="" />
+            <div id="picture-options" class="option-grid"></div>
+            <p id="picture-feedback" class="feedback"></p>
+          </article>
+        </section>
+
         <section id="match" class="view" aria-labelledby="match-tab">
           <div class="section-heading">
             <div>
@@ -187,7 +208,16 @@
             </button>
           </div>
 
-          <div id="match-board" class="match-board"></div>
+          <div id="match-board" class="match-board">
+            <div>
+              <p class="match-row-label" data-i18n="matchFrenchLabel">French</p>
+              <div id="match-french-row" class="match-row"></div>
+            </div>
+            <div>
+              <p class="match-row-label" data-i18n="matchMeaningLabel">Meaning</p>
+              <div id="match-meaning-row" class="match-row"></div>
+            </div>
+          </div>
         </section>
 
         <section id="phrases" class="view" aria-labelledby="phrases-tab">

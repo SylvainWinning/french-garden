@@ -1,4 +1,4 @@
-import { phrases, situations, uiText, vocabulary } from "./data.js";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js";
 
 const STORAGE_KEY = "french-garden-progress";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
@@ -49,8 +49,10 @@ const state = {
   categoryFilter: "all",
   reviewOnly: false,
   recentQuizIds: [],
+  recentPictureIds: [],
   recentListenIds: [],
   quizItem: null,
+  pictureItem: null,
   listenItem: null,
   phraseItem: null,
   selectedMatch: null,
@@ -85,7 +87,12 @@ const elements = {
   quizOptions: document.querySelector("#quiz-options"),
   quizFeedback: document.querySelector("#quiz-feedback"),
   matchBoard: document.querySelector("#match-board"),
+  matchFrenchRow: document.querySelector("#match-french-row"),
+  matchMeaningRow: document.querySelector("#match-meaning-row"),
   resetMatch: document.querySelector("#reset-match"),
+  pictureImage: document.querySelector("#picture-image"),
+  pictureOptions: document.querySelector("#picture-options"),
+  pictureFeedback: document.querySelector("#picture-feedback"),
   phraseTranslation: document.querySelector("#phrase-translation"),
   phraseText: document.querySelector("#phrase-text"),
   phraseOptions: document.querySelector("#phrase-options"),
@@ -107,6 +114,7 @@ function init() {
   renderProgress();
   renderCard();
   nextQuiz();
+  nextPicture();
   resetMatch();
   nextPhrase();
   nextListening();
@@ -122,6 +130,7 @@ function bindEvents() {
     populateFilters();
     renderCard();
     nextQuiz();
+    renderPicture();
     resetMatch();
     renderPhrase();
     renderListening();
@@ -263,11 +272,56 @@ function nextQuiz() {
 
 function answerQuiz(option) {
   const isCorrect = option === state.quizItem.translations[state.uiLanguage];
-  elements.quizFeedback.textContent = isCorrect ? t("correct") : t("wrong");
-  elements.quizFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   updateScore(isCorrect, state.quizItem.id);
+  elements.quizFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
+  elements.quizFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   recordAttempt(state.quizItem.id, isCorrect);
+  if (isCorrect) celebrate(elements.quizFeedback);
   window.setTimeout(nextQuiz, isCorrect ? 850 : 1200);
+}
+
+function nextPicture() {
+  state.pictureItem = pickWithoutRecent(pictureItems, state.recentPictureIds);
+  rememberRecent(state.recentPictureIds, state.pictureItem.id);
+  renderPicture();
+}
+
+function renderPicture() {
+  const item = state.pictureItem;
+  if (!item) return;
+
+  elements.pictureImage.src = item.image;
+  elements.pictureImage.alt = item.alt[state.uiLanguage] || item.alt.en;
+  elements.pictureFeedback.textContent = "";
+  elements.pictureFeedback.className = "feedback";
+
+  const wrongOptions = shuffle(
+    pictureItems
+      .filter((picture) => picture.id !== item.id)
+      .map((picture) => picture.french)
+  ).slice(0, 3);
+  const options = shuffle([item.french, ...wrongOptions]);
+
+  elements.pictureOptions.replaceChildren(
+    ...options.map((optionText) => {
+      const button = document.createElement("button");
+      button.className = "answer-button";
+      button.type = "button";
+      button.textContent = optionText;
+      button.addEventListener("click", () => answerPicture(optionText));
+      return button;
+    })
+  );
+}
+
+function answerPicture(optionText) {
+  const isCorrect = optionText === state.pictureItem.french;
+  updateScore(isCorrect, state.pictureItem.id);
+  elements.pictureFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
+  elements.pictureFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
+  recordAttempt(state.pictureItem.id, isCorrect);
+  if (isCorrect) celebrate(elements.pictureFeedback);
+  window.setTimeout(nextPicture, isCorrect ? 850 : 1200);
 }
 
 function resetMatch() {
@@ -275,29 +329,19 @@ function resetMatch() {
   state.matchedIds = new Set();
   const pool = getPracticeVocabulary();
   const roundItems = shuffle(pool.length >= 5 ? pool : vocabulary).slice(0, 5);
-  const cards = shuffle(
-    roundItems.flatMap((item) => [
-      { id: item.id, type: "fr", label: item.french },
-      {
-        id: item.id,
-        type: "translation",
-        label: item.translations[state.uiLanguage],
-      },
-    ])
+  const frenchCards = shuffle(
+    roundItems.map((item) => ({ id: item.id, type: "fr", label: item.french }))
+  );
+  const meaningCards = shuffle(
+    roundItems.map((item) => ({
+      id: item.id,
+      type: "translation",
+      label: item.translations.en,
+    }))
   );
 
-  elements.matchBoard.replaceChildren(
-    ...cards.map((card) => {
-      const button = document.createElement("button");
-      button.className = "match-tile";
-      button.type = "button";
-      button.textContent = card.label;
-      button.dataset.id = card.id;
-      button.dataset.type = card.type;
-      button.addEventListener("click", () => chooseMatch(button, card));
-      return button;
-    })
-  );
+  elements.matchFrenchRow.replaceChildren(...frenchCards.map(createMatchTile));
+  elements.matchMeaningRow.replaceChildren(...meaningCards.map(createMatchTile));
 }
 
 function nextListening() {
@@ -334,10 +378,11 @@ function renderListening() {
 
 function answerListening(optionText) {
   const isCorrect = optionText === state.listenItem.translations[state.uiLanguage];
-  elements.listenFeedback.textContent = isCorrect ? t("correct") : t("wrong");
-  elements.listenFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   updateScore(isCorrect, state.listenItem.id);
+  elements.listenFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
+  elements.listenFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   recordAttempt(state.listenItem.id, isCorrect);
+  if (isCorrect) celebrate(elements.listenFeedback);
   window.setTimeout(nextListening, isCorrect ? 850 : 1200);
 }
 
@@ -360,6 +405,7 @@ function chooseMatch(button, card) {
     state.matchedIds.add(card.id);
     updateScore(true, card.id);
     recordAttempt(card.id, true);
+    celebrate(button);
     speak(card.type === "fr" ? card.label : first.card.label);
   } else {
     button.classList.add("selected", "shake");
@@ -377,6 +423,17 @@ function chooseMatch(button, card) {
   if (state.matchedIds.size === 5) {
     window.setTimeout(resetMatch, 900);
   }
+}
+
+function createMatchTile(card) {
+  const button = document.createElement("button");
+  button.className = `match-tile match-tile-${card.type}`;
+  button.type = "button";
+  button.textContent = card.label;
+  button.dataset.id = card.id;
+  button.dataset.type = card.type;
+  button.addEventListener("click", () => chooseMatch(button, card));
+  return button;
 }
 
 function nextPhrase() {
@@ -403,10 +460,11 @@ function renderPhrase() {
 
 function answerPhrase(option) {
   const isCorrect = option === state.phraseItem.missing;
-  elements.phraseFeedback.textContent = isCorrect ? t("correct") : t("wrong");
-  elements.phraseFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   updateScore(isCorrect, state.phraseItem.id);
+  elements.phraseFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
+  elements.phraseFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
   if (isCorrect) {
+    celebrate(elements.phraseFeedback);
     speak(state.phraseItem.text);
     window.setTimeout(nextPhrase, 1000);
   }
@@ -461,6 +519,16 @@ function updateScore(isCorrect, id) {
 
   saveProgress();
   renderStats();
+}
+
+function getSuccessMessage() {
+  return state.progress.streak > 1 ? `${t("correct")} ${t("combo")}` : t("correct");
+}
+
+function celebrate(anchor) {
+  anchor.classList.remove("celebrate");
+  void anchor.offsetWidth;
+  anchor.classList.add("celebrate");
 }
 
 function markPracticed(id) {
@@ -557,6 +625,7 @@ function resetPracticeViews() {
   state.cardIndex = 0;
   renderCard();
   nextQuiz();
+  nextPicture();
   resetMatch();
   nextListening();
   renderStats();
