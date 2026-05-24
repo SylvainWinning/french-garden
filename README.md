@@ -2,7 +2,7 @@
 
 Small static French practice app for GitHub Pages. It works without an API:
 all vocabulary, phrases, translations, and interface labels are stored in
-`data.js`.
+`data.js`. The app interface is available in English and Belarusian.
 
 ## Edit the lessons
 
@@ -10,7 +10,7 @@ Open `data.js` and edit:
 
 - `vocabulary` for word cards, quiz, and matching game.
 - `phrases` for sentence completion practice.
-- `uiText` for the app interface in English, French, and Belarusian.
+- `uiText` for the app interface in English and Belarusian.
 
 Each vocabulary item needs:
 
@@ -19,7 +19,7 @@ Each vocabulary item needs:
   id: "water",
   category: "Daily life",
   french: "de l’eau",
-  translations: { en: "water", fr: "de l’eau", be: "вада" }
+  translations: { en: "water", be: "вада" }
 }
 ```
 

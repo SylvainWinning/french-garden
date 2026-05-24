@@ -1,9 +1,10 @@
 import { phrases, uiText, vocabulary } from "./data.js";
 
 const STORAGE_KEY = "french-garden-progress";
+const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
 
 const state = {
-  uiLanguage: localStorage.getItem("french-garden-language") || "en",
+  uiLanguage: getSavedLanguage(),
   cardIndex: 0,
   quizItem: null,
   phraseItem: null,
@@ -289,6 +290,11 @@ function saveProgress() {
 
 function t(key) {
   return uiText[state.uiLanguage][key] || uiText.en[key] || key;
+}
+
+function getSavedLanguage() {
+  const savedLanguage = localStorage.getItem("french-garden-language");
+  return SUPPORTED_LANGUAGES.has(savedLanguage) ? savedLanguage : "en";
 }
 
 function randomItem(items) {
