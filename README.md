@@ -30,6 +30,7 @@ Current learning features:
 - Listening practice without any external API.
 - Picture quiz with built-in images.
 - Guided mini-situations for daily life.
+- Reward milestones with a prefilled email message for Sylvain.
 - Category progress stored in the browser.
 - "I know it" and "Review later" actions on flashcards.
 

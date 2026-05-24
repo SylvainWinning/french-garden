@@ -1,7 +1,45 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-progress-tab";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-rewards";
 
 const STORAGE_KEY = "french-garden-progress";
+const REWARD_EMAIL_KEY = "french-garden-reward-email";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
+const REWARD_MILESTONES = [
+  {
+    id: "kiss-5",
+    answers: 5,
+    reward: { en: "a kiss from Sylvain", be: "пацалунак ад Сільвэна" },
+  },
+  {
+    id: "hug-10",
+    answers: 10,
+    reward: { en: "a big hug from Sylvain", be: "моцныя абдымкі ад Сільвэна" },
+  },
+  {
+    id: "tea-20",
+    answers: 20,
+    reward: { en: "tea together", be: "гарбата разам" },
+  },
+  {
+    id: "dessert-35",
+    answers: 35,
+    reward: { en: "a dessert chosen by her", be: "дэсерт, які яна выбірае" },
+  },
+  {
+    id: "movie-50",
+    answers: 50,
+    reward: { en: "a movie night together", be: "вечар кіно разам" },
+  },
+  {
+    id: "walk-75",
+    answers: 75,
+    reward: { en: "a sweet walk together", be: "мілая прагулка разам" },
+  },
+  {
+    id: "date-100",
+    answers: 100,
+    reward: { en: "a little date planned by Sylvain", be: "маленькае спатканне ад Сільвэна" },
+  },
+];
 const LEVEL_CATEGORIES = {
   1: new Set(["Greetings", "Politeness", "Basics", "Home"]),
   2: new Set(["Food", "Daily life", "Time", "Feelings", "Directions"]),
@@ -57,6 +95,7 @@ const state = {
   phraseItem: null,
   selectedMatch: null,
   matchedIds: new Set(),
+  activeReward: null,
   progress: loadProgress(),
 };
 
@@ -70,6 +109,15 @@ const elements = {
   categoryFilter: document.querySelector("#category-filter"),
   reviewFilter: document.querySelector("#review-filter"),
   categoryProgress: document.querySelector("#category-progress"),
+  rewardEmail: document.querySelector("#reward-email"),
+  rewardList: document.querySelector("#reward-list"),
+  rewardModal: document.querySelector("#reward-modal"),
+  rewardModalTitle: document.querySelector("#reward-modal-title"),
+  rewardModalText: document.querySelector("#reward-modal-text"),
+  rewardMail: document.querySelector("#reward-mail"),
+  rewardCopy: document.querySelector("#reward-copy"),
+  rewardClose: document.querySelector("#reward-close"),
+  rewardHelper: document.querySelector("#reward-helper"),
   tabs: document.querySelectorAll(".tab"),
   views: document.querySelectorAll(".view"),
   shuffleCard: document.querySelector("#shuffle-card"),
@@ -108,10 +156,12 @@ init();
 
 function init() {
   elements.uiLanguage.value = state.uiLanguage;
+  elements.rewardEmail.value = localStorage.getItem(REWARD_EMAIL_KEY) || "";
   populateFilters();
   translateInterface();
   renderStats();
   renderProgress();
+  renderRewards();
   renderCard();
   nextQuiz();
   nextPicture();
@@ -137,6 +187,7 @@ function bindEvents() {
     renderSituations();
     renderStats();
     renderProgress();
+    renderRewards();
   });
 
   elements.levelFilter.addEventListener("change", (event) => {
@@ -152,6 +203,25 @@ function bindEvents() {
   elements.reviewFilter.addEventListener("change", (event) => {
     state.reviewOnly = event.target.checked;
     resetPracticeViews();
+  });
+
+  elements.rewardEmail.addEventListener("input", (event) => {
+    localStorage.setItem(REWARD_EMAIL_KEY, event.target.value.trim());
+    renderRewards();
+    if (state.activeReward) showRewardModal(state.activeReward);
+  });
+
+  elements.rewardCopy.addEventListener("click", copyActiveRewardMessage);
+  elements.rewardClose.addEventListener("click", closeRewardModal);
+  elements.rewardMail.addEventListener("click", (event) => {
+    if (getRewardEmail()) return;
+
+    event.preventDefault();
+    elements.rewardHelper.textContent = t("rewardEmailMissing");
+    elements.rewardEmail.focus();
+  });
+  elements.rewardModal.addEventListener("click", (event) => {
+    if (event.target === elements.rewardModal) closeRewardModal();
   });
 
   elements.tabs.forEach((tab) => {
@@ -183,6 +253,11 @@ function translateInterface() {
   document.querySelectorAll("[data-i18n-title]").forEach((node) => {
     node.title = t(node.dataset.i18nTitle);
   });
+  document.querySelectorAll("[data-i18n-placeholder]").forEach((node) => {
+    node.placeholder = t(node.dataset.i18nPlaceholder);
+  });
+  renderRewards();
+  if (state.activeReward) showRewardModal(state.activeReward);
 }
 
 function showView(viewName) {
@@ -514,12 +589,29 @@ function updateScore(isCorrect, id) {
       state.progress.currentStreak
     );
     markPracticed(id);
+    unlockRewards();
   } else {
     state.progress.currentStreak = 0;
   }
 
   saveProgress();
   renderStats();
+}
+
+function unlockRewards() {
+  const unlockedIds = new Set(state.progress.unlockedRewards);
+  const newRewards = REWARD_MILESTONES.filter(
+    (milestone) =>
+      state.progress.correctAnswers >= milestone.answers &&
+      !unlockedIds.has(milestone.id)
+  );
+
+  if (!newRewards.length) return;
+
+  newRewards.forEach((reward) => state.progress.unlockedRewards.push(reward.id));
+  saveProgress();
+  renderRewards();
+  showRewardModal(newRewards[0]);
 }
 
 function getSuccessMessage() {
@@ -591,11 +683,15 @@ function loadProgress() {
     currentStreak: 0,
     bestStreak: 0,
     practiced: [],
+    unlockedRewards: [],
     words: {},
   };
   try {
     const saved = JSON.parse(localStorage.getItem(STORAGE_KEY));
     const progress = { ...fallback, ...saved, words: saved?.words || {} };
+    progress.unlockedRewards = Array.isArray(saved?.unlockedRewards)
+      ? saved.unlockedRewards
+      : [];
     const legacyStreak = Number.isFinite(saved?.streak) ? saved.streak : 0;
     const scoreAnswers = Math.floor((progress.score || 0) / 10);
 
@@ -674,6 +770,97 @@ function renderProgress() {
       `;
       return row;
     })
+  );
+}
+
+function renderRewards() {
+  const unlockedIds = new Set(state.progress.unlockedRewards);
+  elements.rewardList.replaceChildren(
+    ...REWARD_MILESTONES.map((milestone) => {
+      const unlocked =
+        unlockedIds.has(milestone.id) ||
+        state.progress.correctAnswers >= milestone.answers;
+      const card = document.createElement("article");
+      card.className = `reward-card ${unlocked ? "reward-card-unlocked" : ""}`;
+      const status = unlocked
+        ? formatText(t("rewardForAnswers"), { count: milestone.answers })
+        : formatText(t("rewardLocked"), { count: milestone.answers });
+      card.innerHTML = `
+        <div>
+          <strong>${getRewardText(milestone)}</strong>
+          <span>${status}</span>
+        </div>
+      `;
+
+      if (unlocked) {
+        const button = document.createElement("button");
+        button.className = "secondary-button";
+        button.type = "button";
+        button.textContent = t("sendRewardButton");
+        button.addEventListener("click", () => showRewardModal(milestone));
+        card.append(button);
+      }
+
+      return card;
+    })
+  );
+}
+
+function showRewardModal(reward) {
+  state.activeReward = reward;
+  elements.rewardModal.hidden = false;
+  elements.rewardModalTitle.textContent = getRewardText(reward);
+  elements.rewardModalText.textContent = formatText(t("rewardForAnswers"), {
+    count: reward.answers,
+  });
+  elements.rewardMail.href = buildRewardMailto(reward);
+  elements.rewardMail.classList.toggle("disabled-link", !getRewardEmail());
+  elements.rewardHelper.textContent = getRewardEmail() ? "" : t("rewardEmailMissing");
+}
+
+function closeRewardModal() {
+  state.activeReward = null;
+  elements.rewardModal.hidden = true;
+}
+
+async function copyActiveRewardMessage() {
+  if (!state.activeReward) return;
+
+  const message = buildRewardMessage(state.activeReward);
+  try {
+    await navigator.clipboard.writeText(message);
+    elements.rewardHelper.textContent = t("rewardCopied");
+  } catch {
+    elements.rewardHelper.textContent = message;
+  }
+}
+
+function buildRewardMailto(reward) {
+  const email = getRewardEmail();
+  const subject = encodeURIComponent(t("rewardMessageSubject"));
+  const body = encodeURIComponent(buildRewardMessage(reward));
+  return `mailto:${encodeURIComponent(email)}?subject=${subject}&body=${body}`;
+}
+
+function buildRewardMessage(reward) {
+  return formatText(t("rewardMessageBody"), {
+    reward: getRewardText(reward),
+    count: reward.answers,
+  });
+}
+
+function getRewardText(reward) {
+  return reward.reward[state.uiLanguage] || reward.reward.en;
+}
+
+function getRewardEmail() {
+  return elements.rewardEmail.value.trim();
+}
+
+function formatText(text, values) {
+  return Object.entries(values).reduce(
+    (result, [key, value]) => result.replaceAll(`{${key}}`, value),
+    text
   );
 }
 

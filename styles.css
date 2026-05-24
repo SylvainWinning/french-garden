@@ -29,6 +29,7 @@ body {
 }
 
 button,
+input,
 select {
   font: inherit;
 }
@@ -221,7 +222,8 @@ h3 {
 }
 
 .filter-panel,
-.progress-panel {
+.progress-panel,
+.reward-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 250, 252, 0.78);
@@ -274,6 +276,12 @@ h3 {
   margin-bottom: 0;
 }
 
+.reward-panel {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
 .category-progress {
   display: grid;
   gap: 10px;
@@ -310,6 +318,64 @@ h3 {
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--pink), var(--mint));
+}
+
+.reward-email {
+  display: grid;
+  gap: 6px;
+}
+
+.reward-email span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.reward-email input {
+  width: 100%;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  min-height: 44px;
+  padding: 8px 10px;
+  font-weight: 800;
+}
+
+.reward-list {
+  display: grid;
+  gap: 8px;
+}
+
+.reward-card {
+  display: grid;
+  gap: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 12px;
+}
+
+.reward-card-unlocked {
+  border-color: rgba(116, 215, 178, 0.9);
+  background: #e8fff5;
+}
+
+.reward-card div {
+  display: grid;
+  gap: 4px;
+}
+
+.reward-card strong {
+  color: var(--ink);
+}
+
+.reward-card span,
+.reward-helper {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 800;
 }
 
 .tabs {
@@ -430,6 +496,10 @@ h3 {
 }
 
 .primary-button {
+  display: inline-grid;
+  place-items: center;
+  text-align: center;
+  text-decoration: none;
   width: 100%;
   background: var(--pink);
   color: white;
@@ -508,6 +578,54 @@ h3 {
 
 .feedback.error {
   color: #b93c65;
+}
+
+.reward-modal[hidden] {
+  display: none;
+}
+
+.reward-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  place-items: center;
+  background: rgba(52, 34, 56, 0.42);
+  padding: 18px;
+}
+
+.reward-dialog {
+  display: grid;
+  gap: 12px;
+  width: min(100%, 440px);
+  border: 2px solid rgba(255, 111, 174, 0.32);
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.reward-dialog h2,
+.reward-dialog p {
+  margin: 0;
+}
+
+.reward-dialog h2 {
+  color: #a22465;
+}
+
+.reward-dialog > p:not(.eyebrow):not(.reward-helper) {
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.reward-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.disabled-link {
+  opacity: 0.58;
 }
 
 .picture-card {
