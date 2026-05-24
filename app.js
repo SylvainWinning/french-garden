@@ -1,6 +1,6 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-nail-salon-v2";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-progress-reset-v2";
 
-const STORAGE_KEY = "french-garden-progress";
+const STORAGE_KEY = "french-garden-progress-clean-start-20260524";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
 const HERO_PHOTOS = [
   "./assets/hero/hero-1.jpg",
@@ -302,9 +302,6 @@ function renderCard() {
   elements.cardCategory.textContent = getCategoryLabel(item.category);
   elements.cardFrench.textContent = item.french;
   elements.cardTranslation.textContent = item.translations[state.uiLanguage];
-  markPracticed(item.id);
-  renderStats();
-  renderProgress();
 }
 
 function nextCard() {
