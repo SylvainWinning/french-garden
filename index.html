@@ -108,6 +108,12 @@
           <button class="tab" type="button" data-view="phrases">
             <span data-i18n="phrasesTab">Phrases</span>
           </button>
+          <button class="tab" type="button" data-view="listen">
+            <span data-i18n="listenTab">Listen</span>
+          </button>
+          <button class="tab" type="button" data-view="situations">
+            <span data-i18n="situationsTab">Situations</span>
+          </button>
         </nav>
 
         <section id="cards" class="view active-view" aria-labelledby="cards-tab">
@@ -115,7 +121,6 @@
             <div>
               <p class="eyebrow" data-i18n="cardsEyebrow">Vocabulary</p>
               <h2 data-i18n="cardsTitle">Tap, listen, remember</h2>
-              <p id="cards-count" class="section-count"></p>
             </div>
             <button
               id="shuffle-card"
@@ -160,7 +165,6 @@
             <div>
               <p class="eyebrow" data-i18n="quizEyebrow">Quick quiz</p>
               <h2 data-i18n="quizTitle">Choose the meaning</h2>
-              <p id="quiz-count" class="section-count"></p>
             </div>
           </div>
 
@@ -177,7 +181,6 @@
             <div>
               <p class="eyebrow" data-i18n="matchEyebrow">Memory match</p>
               <h2 data-i18n="matchTitle">Pair French with meaning</h2>
-              <p id="match-count" class="section-count"></p>
             </div>
             <button id="reset-match" class="secondary-button" type="button">
               <span data-i18n="resetButton">Reset</span>
@@ -192,7 +195,6 @@
             <div>
               <p class="eyebrow" data-i18n="phrasesEyebrow">Useful phrases</p>
               <h2 data-i18n="phrasesTitle">Complete the sentence</h2>
-              <p id="phrases-count" class="section-count"></p>
             </div>
           </div>
 
@@ -205,6 +207,35 @@
             </button>
             <p id="phrase-feedback" class="feedback"></p>
           </article>
+        </section>
+
+        <section id="listen" class="view" aria-labelledby="listen-tab">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="listenEyebrow">Listening</p>
+              <h2 data-i18n="listenTitle">Hear French, choose meaning</h2>
+            </div>
+          </div>
+
+          <article class="challenge-card">
+            <p class="prompt" data-i18n="listenPrompt">Listen, then choose the meaning.</p>
+            <button id="play-listen" class="primary-button" type="button">
+              <span data-i18n="playAudioButton">Play audio</span>
+            </button>
+            <div id="listen-options" class="option-grid"></div>
+            <p id="listen-feedback" class="feedback"></p>
+          </article>
+        </section>
+
+        <section id="situations" class="view" aria-labelledby="situations-tab">
+          <div class="section-heading">
+            <div>
+              <p class="eyebrow" data-i18n="situationsEyebrow">Mini situations</p>
+              <h2 data-i18n="situationsTitle">Practice real moments</h2>
+            </div>
+          </div>
+
+          <div id="situations-board" class="situations-board"></div>
         </section>
       </main>
     </div>

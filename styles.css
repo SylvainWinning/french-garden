@@ -317,7 +317,7 @@ h3 {
   top: 0;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 6px;
   margin: 18px 0 14px;
   padding: 8px;
@@ -365,13 +365,6 @@ h3 {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
-}
-
-.section-count {
-  margin: 6px 0 0;
-  color: var(--muted);
-  font-size: 0.9rem;
-  font-weight: 800;
 }
 
 .icon-button,
@@ -518,6 +511,68 @@ h3 {
   gap: 9px;
 }
 
+.situations-board {
+  display: grid;
+  gap: 12px;
+}
+
+.situation-card {
+  display: grid;
+  gap: 14px;
+  border: 2px solid rgba(255, 111, 174, 0.24);
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.situation-card p,
+.situation-card span {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+}
+
+.situation-card p {
+  color: #a22465;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.situation-card h3 {
+  margin: 4px 0 6px;
+  color: var(--ink);
+  font-size: 1.35rem;
+}
+
+.situation-lines {
+  display: grid;
+  gap: 8px;
+}
+
+.situation-line {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink);
+  cursor: pointer;
+  padding: 12px;
+  text-align: left;
+}
+
+.situation-line strong,
+.situation-line span {
+  overflow-wrap: anywhere;
+}
+
+.situation-line span {
+  color: var(--muted);
+  font-weight: 800;
+}
+
 .match-tile {
   min-height: 72px;
   border: 2px solid var(--line);
@@ -585,6 +640,10 @@ h3 {
   .match-board {
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
+
+  .situations-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 420px) {
@@ -608,6 +667,10 @@ h3 {
   .tab {
     min-height: 48px;
     font-size: 0.84rem;
+  }
+
+  .tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .card-actions {

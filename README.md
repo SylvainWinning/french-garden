@@ -6,11 +6,12 @@ all vocabulary, phrases, translations, and interface labels are stored in
 
 ## Edit the lessons
 
-Open `data.js` and edit:
+Open the focused data file and edit:
 
-- `vocabulary` for word cards, quiz, and matching game.
-- `phrases` for sentence completion practice.
-- `uiText` for the app interface in English and Belarusian.
+- `vocabulary.js` for word cards, quiz, listening, and matching game.
+- `phrases.js` for sentence completion practice.
+- `situations.js` for guided daily-life practice groups.
+- `ui-text.js` for the app interface in English and Belarusian.
 
 Current content:
 
@@ -23,6 +24,8 @@ Current learning features:
 
 - Level and category filters for focused practice.
 - Review-only mode for words marked difficult.
+- Listening practice without any external API.
+- Guided mini-situations for daily life.
 - Category progress stored in the browser.
 - "I know it" and "Review later" actions on flashcards.
 

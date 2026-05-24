@@ -1,4 +1,4 @@
-import { phrases, uiText, vocabulary } from "./data.js";
+import { phrases, situations, uiText, vocabulary } from "./data.js";
 
 const STORAGE_KEY = "french-garden-progress";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
@@ -48,7 +48,10 @@ const state = {
   levelFilter: "all",
   categoryFilter: "all",
   reviewOnly: false,
+  recentQuizIds: [],
+  recentListenIds: [],
   quizItem: null,
+  listenItem: null,
   phraseItem: null,
   selectedMatch: null,
   matchedIds: new Set(),
@@ -69,10 +72,6 @@ const elements = {
   views: document.querySelectorAll(".view"),
   shuffleCard: document.querySelector("#shuffle-card"),
   flashcard: document.querySelector("#flashcard"),
-  cardsCount: document.querySelector("#cards-count"),
-  quizCount: document.querySelector("#quiz-count"),
-  matchCount: document.querySelector("#match-count"),
-  phrasesCount: document.querySelector("#phrases-count"),
   cardLevel: document.querySelector("#card-level"),
   cardCategory: document.querySelector("#card-category"),
   cardFrench: document.querySelector("#card-french"),
@@ -92,6 +91,10 @@ const elements = {
   phraseOptions: document.querySelector("#phrase-options"),
   phraseFeedback: document.querySelector("#phrase-feedback"),
   speakPhrase: document.querySelector("#speak-phrase"),
+  playListen: document.querySelector("#play-listen"),
+  listenOptions: document.querySelector("#listen-options"),
+  listenFeedback: document.querySelector("#listen-feedback"),
+  situationsBoard: document.querySelector("#situations-board"),
 };
 
 init();
@@ -106,6 +109,8 @@ function init() {
   nextQuiz();
   resetMatch();
   nextPhrase();
+  nextListening();
+  renderSituations();
   bindEvents();
 }
 
@@ -119,6 +124,8 @@ function bindEvents() {
     nextQuiz();
     resetMatch();
     renderPhrase();
+    renderListening();
+    renderSituations();
     renderStats();
     renderProgress();
   });
@@ -154,6 +161,9 @@ function bindEvents() {
 
   elements.resetMatch.addEventListener("click", resetMatch);
   elements.speakPhrase.addEventListener("click", () => speak(state.phraseItem.text));
+  elements.playListen.addEventListener("click", () => {
+    if (state.listenItem) speak(state.listenItem.french);
+  });
 }
 
 function translateInterface() {
@@ -180,26 +190,6 @@ function renderStats() {
   elements.streak.textContent = state.progress.streak;
   elements.practiced.textContent = state.progress.practiced.length;
   elements.reviewCount.textContent = getReviewIds().length;
-  elements.cardsCount.textContent = countText(
-    getPracticeVocabulary().length,
-    "cardAvailable",
-    "cardsAvailable"
-  );
-  elements.quizCount.textContent = countText(
-    getPracticeVocabulary().length,
-    "quizWordAvailable",
-    "quizAvailable"
-  );
-  elements.matchCount.textContent = countText(
-    getPracticeVocabulary().length,
-    "matchWordAvailable",
-    "matchAvailable"
-  );
-  elements.phrasesCount.textContent = countText(
-    phrases.length,
-    "phraseAvailable",
-    "phrasesAvailable"
-  );
 }
 
 function renderCard() {
@@ -244,12 +234,14 @@ function previousCard() {
 
 function nextQuiz() {
   const pool = getPracticeVocabulary();
-  state.quizItem = randomItem(pool.length ? pool : vocabulary);
+  state.quizItem = pickWithoutRecent(pool.length ? pool : vocabulary, state.recentQuizIds);
+  rememberRecent(state.recentQuizIds, state.quizItem.id);
   elements.quizWord.textContent = state.quizItem.french;
   elements.quizFeedback.textContent = "";
   const wrongOptions = shuffle(
     vocabulary
       .filter((item) => item.id !== state.quizItem.id)
+      .filter((item) => item.translations[state.uiLanguage] !== state.quizItem.translations[state.uiLanguage])
       .map((item) => item.translations[state.uiLanguage])
   ).slice(0, 3);
   const options = shuffle([
@@ -306,6 +298,47 @@ function resetMatch() {
       return button;
     })
   );
+}
+
+function nextListening() {
+  const pool = getPracticeVocabulary();
+  state.listenItem = pickWithoutRecent(pool.length ? pool : vocabulary, state.recentListenIds);
+  rememberRecent(state.recentListenIds, state.listenItem.id);
+  renderListening();
+}
+
+function renderListening() {
+  const item = state.listenItem;
+  if (!item) return;
+
+  elements.listenFeedback.textContent = "";
+  const wrongOptions = shuffle(
+    vocabulary
+      .filter((word) => word.id !== item.id)
+      .filter((word) => word.translations[state.uiLanguage] !== item.translations[state.uiLanguage])
+      .map((word) => word.translations[state.uiLanguage])
+  ).slice(0, 3);
+  const options = shuffle([item.translations[state.uiLanguage], ...wrongOptions]);
+
+  elements.listenOptions.replaceChildren(
+    ...options.map((optionText) => {
+      const button = document.createElement("button");
+      button.className = "answer-button";
+      button.type = "button";
+      button.textContent = optionText;
+      button.addEventListener("click", () => answerListening(optionText));
+      return button;
+    })
+  );
+}
+
+function answerListening(optionText) {
+  const isCorrect = optionText === state.listenItem.translations[state.uiLanguage];
+  elements.listenFeedback.textContent = isCorrect ? t("correct") : t("wrong");
+  elements.listenFeedback.className = `feedback ${isCorrect ? "success" : "error"}`;
+  updateScore(isCorrect, state.listenItem.id);
+  recordAttempt(state.listenItem.id, isCorrect);
+  window.setTimeout(nextListening, isCorrect ? 850 : 1200);
 }
 
 function chooseMatch(button, card) {
@@ -377,6 +410,40 @@ function answerPhrase(option) {
     speak(state.phraseItem.text);
     window.setTimeout(nextPhrase, 1000);
   }
+}
+
+function renderSituations() {
+  const phraseById = new Map(phrases.map((phrase) => [phrase.id, phrase]));
+
+  elements.situationsBoard.replaceChildren(
+    ...situations.map((situation) => {
+      const card = document.createElement("article");
+      card.className = "situation-card";
+      const situationPhrases = situation.phrases
+        .map((phraseId) => phraseById.get(phraseId))
+        .filter(Boolean);
+      card.innerHTML = `
+        <div>
+          <p>${getCategoryLabel(situation.category)}</p>
+          <h3>${situation.title[state.uiLanguage]}</h3>
+          <span>${situation.summary[state.uiLanguage]}</span>
+        </div>
+        <div class="situation-lines"></div>
+      `;
+      const lines = card.querySelector(".situation-lines");
+      lines.replaceChildren(
+        ...situationPhrases.map((phrase) => {
+          const row = document.createElement("button");
+          row.type = "button";
+          row.className = "situation-line";
+          row.innerHTML = `<strong>${phrase.text}</strong><span>${phrase.translations[state.uiLanguage]}</span>`;
+          row.addEventListener("click", () => speak(phrase.text));
+          return row;
+        })
+      );
+      return card;
+    })
+  );
 }
 
 function updateScore(isCorrect, id) {
@@ -491,6 +558,7 @@ function resetPracticeViews() {
   renderCard();
   nextQuiz();
   resetMatch();
+  nextListening();
   renderStats();
   renderProgress();
 }
@@ -564,12 +632,18 @@ function option(value, label) {
   return element;
 }
 
-function countText(count, singularKey, pluralKey) {
-  return `${count} ${t(count === 1 ? singularKey : pluralKey)}`;
-}
-
 function randomItem(items) {
   return items[Math.floor(Math.random() * items.length)];
+}
+
+function pickWithoutRecent(items, recentIds) {
+  const available = items.filter((item) => !recentIds.includes(item.id));
+  return randomItem(available.length ? available : items);
+}
+
+function rememberRecent(recentIds, id) {
+  recentIds.push(id);
+  if (recentIds.length > 8) recentIds.shift();
 }
 
 function shuffle(items) {
