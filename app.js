@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-reward-copy-image";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-random-options";
 
 const STORAGE_KEY = "french-garden-progress";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
@@ -1041,5 +1041,12 @@ function rememberRecent(recentIds, id) {
 }
 
 function shuffle(items) {
-  return [...items].sort(() => Math.random() - 0.5);
+  const shuffled = [...items];
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[swapIndex]] = [shuffled[swapIndex], shuffled[index]];
+  }
+
+  return shuffled;
 }
