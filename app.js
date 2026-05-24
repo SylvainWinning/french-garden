@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-progress-tab";
 
 const STORAGE_KEY = "french-garden-progress";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
