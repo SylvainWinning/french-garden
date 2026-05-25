@@ -59,6 +59,7 @@ repository settings. Use the branch and folder you prefer, for example
 The app sends invisible usage events to a private Google Form owned by Sylvain.
 Google Forms stores each event with its own timestamp, and failures are ignored
 so the app keeps working offline.
+Each event is written as a short bullet-point summary instead of raw JSON.
 
 Status:
 

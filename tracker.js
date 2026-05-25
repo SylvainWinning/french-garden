@@ -31,7 +31,7 @@ export function createUsageTracker({ getLanguage, getStats }) {
 
     try {
       const body = new URLSearchParams({
-        [TRACKING_PAYLOAD_FIELD]: JSON.stringify(payload),
+        [TRACKING_PAYLOAD_FIELD]: formatUsefulSummary(payload),
       }).toString();
       if (navigator.sendBeacon) {
         const blob = new Blob([body], {
@@ -61,6 +61,45 @@ export function createUsageTracker({ getLanguage, getStats }) {
   }
 
   return { track, startHeartbeat };
+}
+
+function formatUsefulSummary(payload) {
+  const lines = [
+    `• Quand : ${formatWhen(payload.timestamp)}`,
+    `• Action : ${formatAction(payload)}`,
+    `• Bonnes réponses : ${payload.correctAnswers}`,
+    `• Score : ${payload.score}`,
+    `• Pratiqués : ${payload.practicedCount}`,
+    `• À revoir : ${payload.reviewCount}`,
+  ];
+
+  if (payload.itemId) lines.splice(2, 0, `• Élément : ${payload.itemId}`);
+  if (payload.appLanguage) lines.push(`• Langue : ${payload.appLanguage}`);
+  if (payload.sessionId) lines.push(`• Session : ${payload.sessionId.slice(0, 8)}`);
+
+  return lines.join("\n");
+}
+
+function formatAction(payload) {
+  if (payload.eventType === "session_start") return "Ouverture de l'app";
+  if (payload.eventType === "session_ping") return "App encore ouverte";
+  if (payload.eventType === "reward_unlocked") return "Récompense débloquée";
+  if (payload.eventType === "answer") {
+    const result = payload.correct === true ? "bonne réponse" : "mauvaise réponse";
+    return `Réponse ${payload.activityType || "exercice"} (${result})`;
+  }
+  return payload.eventType;
+}
+
+function formatWhen(timestamp) {
+  try {
+    return new Intl.DateTimeFormat("fr-FR", {
+      dateStyle: "short",
+      timeStyle: "medium",
+    }).format(new Date(timestamp));
+  } catch {
+    return timestamp;
+  }
 }
 
 function getOrCreateClientId() {

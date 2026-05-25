@@ -1,5 +1,5 @@
 import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-tracker";
-import { createUsageTracker } from "./tracker.js?v=20260524-tracker-2";
+import { createUsageTracker } from "./tracker.js?v=20260525-readable";
 
 const STORAGE_KEY = "french-garden-progress-clean-start-20260524-tracker-reset";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
