@@ -26,7 +26,8 @@ Current content:
 Current learning features:
 
 - Level and category filters for focused practice.
-- Private usage tracking through a Google Apps Script endpoint.
+- Private usage tracking through Google Forms.
+- Snapshot dashboard in `dashboard.html` for tracker results.
 - Review-only mode for words marked difficult.
 - Listening practice without any external API.
 - Picture quiz with built-in images.

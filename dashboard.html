@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>French Garden Dashboard</title>
+    <link rel="stylesheet" href="./dashboard.css?v=20260525-dashboard" />
+  </head>
+  <body>
+    <main class="dashboard-shell">
+      <header class="dashboard-header">
+        <div>
+          <p>French Garden</p>
+          <h1>Dashboard résultats</h1>
+        </div>
+        <a href="./">Ouvrir l'app</a>
+      </header>
+
+      <section class="summary-grid" aria-label="Résumé">
+        <article>
+          <span>Événements</span>
+          <strong id="total-events">0</strong>
+        </article>
+        <article>
+          <span>Sessions</span>
+          <strong id="total-sessions">0</strong>
+        </article>
+        <article>
+          <span>Réponses correctes</span>
+          <strong id="good-answers">0</strong>
+        </article>
+        <article>
+          <span>Score max</span>
+          <strong id="max-score">0</strong>
+        </article>
+      </section>
+
+      <section class="dashboard-grid">
+        <article class="panel chart-panel">
+          <div class="panel-title">
+            <div>
+              <p>Réussite</p>
+              <h2>Bonnes vs mauvaises réponses</h2>
+            </div>
+            <strong id="success-rate">0%</strong>
+          </div>
+          <canvas id="success-chart" width="260" height="260" aria-label="Camembert réussite"></canvas>
+          <div id="success-legend" class="legend"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <div>
+              <p>Activités</p>
+              <h2>Réponses par type</h2>
+            </div>
+          </div>
+          <div id="activity-bars" class="bars"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <div>
+              <p>Historique</p>
+              <h2>Dernières actions intéressantes</h2>
+            </div>
+          </div>
+          <div id="recent-list" class="recent-list"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <div>
+              <p>Importer</p>
+              <h2>Coller un export Google Sheets</h2>
+            </div>
+          </div>
+          <textarea id="csv-input" placeholder="Colle ici les colonnes Horodateur et Infos utiles depuis Google Sheets."></textarea>
+          <button id="import-csv" type="button">Mettre à jour le dashboard</button>
+        </article>
+      </section>
+    </main>
+    <script type="module" src="./dashboard.js?v=20260525-dashboard"></script>
+  </body>
+</html>
