@@ -2,6 +2,7 @@ const TRACKING_ENDPOINT = "https://docs.google.com/forms/d/e/1FAIpQLScPJz900yUZ6
 const TRACKING_PAYLOAD_FIELD = "entry.1264612823";
 const HAS_TRACKING_ENDPOINT = TRACKING_ENDPOINT.startsWith("https://docs.google.com/forms/");
 const CLIENT_ID_KEY = "french-garden-tracker-client-id";
+const TEST_MODE_KEY = "french-garden-codex-test-mode";
 const HEARTBEAT_INTERVAL_MS = 3 * 60 * 1000;
 
 export function createUsageTracker({ getLanguage, getStats }) {
@@ -27,7 +28,7 @@ export function createUsageTracker({ getLanguage, getStats }) {
       sessionId,
       clientId,
       userAgent: navigator.userAgent,
-      source: getSourceLabel(navigator.userAgent),
+      source: getSourceLabel(),
     };
 
     try {
@@ -104,8 +105,12 @@ function formatWhen(timestamp) {
   }
 }
 
-function getSourceLabel(userAgent) {
-  return /codex|electron|curl/i.test(userAgent || "") ? "Codex" : "Elle";
+function getSourceLabel() {
+  try {
+    return localStorage.getItem(TEST_MODE_KEY) === "on" ? "Codex" : "Elle";
+  } catch {
+    return "Elle";
+  }
 }
 
 function getOrCreateClientId() {

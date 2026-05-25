@@ -38,6 +38,27 @@ button {
   min-height: 44px;
 }
 
+.codex-test-mode {
+  background: var(--ink);
+  border: 0;
+  border-radius: 999px;
+  bottom: 8px;
+  cursor: pointer;
+  height: 10px;
+  min-height: 10px;
+  opacity: 0.08;
+  padding: 0;
+  position: fixed;
+  right: 8px;
+  width: 10px;
+  z-index: 20;
+}
+
+.codex-test-mode.is-active {
+  background: var(--pink);
+  opacity: 0.55;
+}
+
 .app-shell {
   width: min(100%, 980px);
   margin: 0 auto;

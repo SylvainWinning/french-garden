@@ -1,4 +1,4 @@
-import { trackerRows } from "./dashboard-data.js?v=20260525-source";
+import { trackerRows } from "./dashboard-data.js?v=20260525-test-toggle";
 
 const state = { rows: trackerRows };
 
@@ -20,6 +20,7 @@ function render() {
   const wrong = answers.filter((event) => event.correct === false).length;
   const sessions = new Set(events.map((event) => event.sessionId).filter(Boolean));
   const sessionDurations = getSessionDurations(events);
+  const learnerSessionDurations = sessionDurations.filter((session) => session.source === "Elle");
   const latest = latestProgress(events);
 
   setText("total-events", events.length);
@@ -28,8 +29,8 @@ function render() {
   setText("max-score", latest.score);
   setText("total-rewards", rewards.length);
   setText("latest-reward", rewards.length ? rewards[rewards.length - 1].itemId || "Récompense" : "-");
-  setText("total-session-time", sessionDurations.length ? formatDuration(sumDurations(sessionDurations)) : "0 min");
-  setText("average-session-time", sessionDurations.length ? formatDuration(averageDuration(sessionDurations)) : "0 min");
+  setText("total-session-time", learnerSessionDurations.length ? formatDuration(sumDurations(learnerSessionDurations)) : "0 min");
+  setText("average-session-time", learnerSessionDurations.length ? formatDuration(averageDuration(learnerSessionDurations)) : "0 min");
 
   const totalAnswers = correct + wrong;
   setText("success-rate", totalAnswers ? `${Math.round((correct / totalAnswers) * 100)}%` : "0%");
@@ -90,7 +91,7 @@ function normalizeRow(row) {
     reviewCount: Number(fields["À revoir"] || 0),
     appLanguage: fields.Langue || "",
     sessionId: fields.Session || "",
-    source: fields.Source || "Non précisé",
+    source: fields.Source || "Elle",
     actionLabel: action,
   };
 }
@@ -319,8 +320,7 @@ function sourceFromPayload(payload) {
   const userAgent = payload.userAgent || "";
   if (/codex|electron|curl/i.test(userAgent)) return "Codex";
   if (payload.clientId === "codex-test" || payload.sessionId === "codex-test" || payload.appLanguage === "test") return "Codex";
-  if (userAgent) return "Elle";
-  return "Non précisé";
+  return "Elle";
 }
 
 function summarizeSources(sources) {

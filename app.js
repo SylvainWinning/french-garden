@@ -1,7 +1,8 @@
 import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260525-filter-fix";
-import { createUsageTracker } from "./tracker.js?v=20260525-source";
+import { createUsageTracker } from "./tracker.js?v=20260525-test-toggle";
 
 const STORAGE_KEY = "french-garden-progress-clean-start-20260524-tracker-reset";
+const TEST_MODE_KEY = "french-garden-codex-test-mode";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
 const HERO_PHOTOS = [
   "./assets/hero/hero-1.jpg",
@@ -148,6 +149,7 @@ const elements = {
   rewardCopy: document.querySelector("#reward-copy"),
   rewardClose: document.querySelector("#reward-close"),
   rewardHelper: document.querySelector("#reward-helper"),
+  testModeToggle: document.querySelector("#codex-test-mode"),
   tabs: document.querySelectorAll(".tab"),
   views: document.querySelectorAll(".view"),
   shuffleCard: document.querySelector("#shuffle-card"),
@@ -193,6 +195,7 @@ function init() {
   resetMatch();
   nextPhrase();
   renderSituations();
+  renderTestModeToggle();
   bindEvents();
   tracker.track("session_start");
   tracker.startHeartbeat();
@@ -200,6 +203,32 @@ function init() {
 
 function setRandomHeroPhoto() {
   elements.heroPhoto.src = randomItem(HERO_PHOTOS);
+}
+
+function toggleTestMode() {
+  const enabled = !isTestModeEnabled();
+  try {
+    localStorage.setItem(TEST_MODE_KEY, enabled ? "on" : "off");
+  } catch {
+    // Test mode only labels private tracking events.
+  }
+  renderTestModeToggle();
+  if (enabled) window.location.reload();
+}
+
+function isTestModeEnabled() {
+  try {
+    return localStorage.getItem(TEST_MODE_KEY) === "on";
+  } catch {
+    return false;
+  }
+}
+
+function renderTestModeToggle() {
+  const enabled = isTestModeEnabled();
+  elements.testModeToggle.classList.toggle("is-active", enabled);
+  elements.testModeToggle.setAttribute("aria-pressed", String(enabled));
+  elements.testModeToggle.title = enabled ? "Codex test mode on" : "Codex test mode off";
 }
 
 function bindEvents() {
@@ -234,6 +263,8 @@ function bindEvents() {
     state.reviewOnly = event.target.checked;
     resetPracticeViews();
   });
+
+  elements.testModeToggle.addEventListener("click", toggleTestMode);
 
   elements.rewardCopy.addEventListener("click", copyActiveRewardImage);
   elements.rewardClose.addEventListener("click", closeRewardModal);
