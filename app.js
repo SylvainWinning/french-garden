@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260524-tracker";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260525-filter-fix";
 import { createUsageTracker } from "./tracker.js?v=20260525-source";
 
 const STORAGE_KEY = "french-garden-progress-clean-start-20260524-tracker-reset";
@@ -221,6 +221,7 @@ function bindEvents() {
 
   elements.levelFilter.addEventListener("change", (event) => {
     state.levelFilter = event.target.value;
+    populateCategoryFilter();
     resetPracticeViews();
   });
 
@@ -508,12 +509,22 @@ function createMatchTile(card) {
 }
 
 function nextPhrase() {
-  state.phraseItem = randomItem(phrases);
+  const pool = getPracticePhrases();
+  state.phraseItem = pool.length ? randomItem(pool) : null;
   renderPhrase();
 }
 
 function renderPhrase() {
   const item = state.phraseItem;
+  if (!item) {
+    elements.phraseTranslation.textContent = t("emptyPractice");
+    elements.phraseText.textContent = "";
+    elements.phraseFeedback.textContent = "";
+    elements.phraseFeedback.className = "feedback";
+    elements.phraseOptions.replaceChildren();
+    return;
+  }
+
   elements.phraseTranslation.textContent = item.translations[state.uiLanguage];
   elements.phraseText.textContent = item.text.replace(item.missing, "_____");
   elements.phraseFeedback.textContent = "";
@@ -530,6 +541,8 @@ function renderPhrase() {
 }
 
 function answerPhrase(option) {
+  if (!state.phraseItem) return;
+
   const isCorrect = option === state.phraseItem.missing;
   updateScore(isCorrect, state.phraseItem.id);
   elements.phraseFeedback.textContent = isCorrect ? getSuccessMessage() : t("wrong");
@@ -544,9 +557,10 @@ function answerPhrase(option) {
 
 function renderSituations() {
   const phraseById = new Map(phrases.map((phrase) => [phrase.id, phrase]));
+  const filteredSituations = getPracticeSituations();
 
   elements.situationsBoard.replaceChildren(
-    ...situations.map((situation) => {
+    ...(filteredSituations.length ? filteredSituations : []).map((situation) => {
       const card = document.createElement("article");
       card.className = "situation-card";
       const situationPhrases = situation.phrases
@@ -571,7 +585,8 @@ function renderSituations() {
         })
       );
       return card;
-    })
+    }),
+    ...(filteredSituations.length ? [] : [createEmptyState()])
   );
 }
 
@@ -724,19 +739,14 @@ function getSavedLanguage() {
 }
 
 function populateFilters() {
-  const categories = [...new Set(vocabulary.map((item) => item.category))].sort();
   elements.levelFilter.replaceChildren(
     option("all", t("allLevels")),
     option("1", t("level1")),
     option("2", t("level2")),
     option("3", t("level3"))
   );
-  elements.categoryFilter.replaceChildren(
-    option("all", t("allCategories")),
-    ...categories.map((category) => option(category, getCategoryLabel(category)))
-  );
   elements.levelFilter.value = state.levelFilter;
-  elements.categoryFilter.value = state.categoryFilter;
+  populateCategoryFilter();
   elements.reviewFilter.checked = state.reviewOnly;
 }
 
@@ -746,8 +756,22 @@ function resetPracticeViews() {
   nextQuiz();
   nextPicture();
   resetMatch();
+  nextPhrase();
+  renderSituations();
   renderStats();
   renderProgress();
+}
+
+function populateCategoryFilter() {
+  const categories = getAvailableCategories();
+  if (state.categoryFilter !== "all" && !categories.includes(state.categoryFilter)) {
+    state.categoryFilter = "all";
+  }
+  elements.categoryFilter.replaceChildren(
+    option("all", t("allCategories")),
+    ...categories.map((category) => option(category, getCategoryLabel(category)))
+  );
+  elements.categoryFilter.value = state.categoryFilter;
 }
 
 function renderProgress() {
@@ -997,6 +1021,32 @@ function getPracticePictures() {
   });
 }
 
+function getPracticePhrases() {
+  return phrases.filter((phrase) => {
+    const category = getPhraseCategory(phrase);
+    return filtersMatchCategory(category);
+  });
+}
+
+function getPracticeSituations() {
+  return situations.filter((situation) => filtersMatchCategory(situation.category));
+}
+
+function getAvailableCategories() {
+  return [...new Set(vocabulary.map((item) => item.category))]
+    .filter((category) => state.levelFilter === "all" || String(getCategoryLevel(category)) === state.levelFilter)
+    .sort();
+}
+
+function filtersMatchCategory(category) {
+  if (!category) return state.levelFilter === "all" && state.categoryFilter === "all";
+  const levelMatches =
+    state.levelFilter === "all" || String(getCategoryLevel(category)) === state.levelFilter;
+  const categoryMatches =
+    state.categoryFilter === "all" || category === state.categoryFilter;
+  return levelMatches && categoryMatches;
+}
+
 function getCurrentCard() {
   const pool = getPracticeVocabulary();
   return pool[state.cardIndex] || pool[0];
@@ -1012,10 +1062,28 @@ function getReviewIds() {
 }
 
 function getWordLevel(item) {
+  return getCategoryLevel(item.category);
+}
+
+function getCategoryLevel(category) {
   const level = Object.entries(LEVEL_CATEGORIES).find(([, categories]) =>
-    categories.has(item.category)
+    categories.has(category)
   );
   return Number(level?.[0] || 1);
+}
+
+function getPhraseCategory(phrase) {
+  const situation = situations.find((item) => item.phrases.includes(phrase.id));
+  if (situation) return situation.category;
+
+  const phraseWords = [
+    phrase.missing,
+    ...phrase.text.split(/\s+/),
+  ].map(normalizeFrenchText);
+  const match = vocabulary.find((item) =>
+    phraseWords.includes(normalizeFrenchText(item.french))
+  );
+  return match?.category || "";
 }
 
 function getCategoryLabel(category) {
@@ -1115,6 +1183,14 @@ function getAnswerShape(answer) {
     return "time";
   }
   return "plain";
+}
+
+function normalizeFrenchText(value) {
+  return String(value)
+    .toLowerCase()
+    .replace(/[’']/g, "'")
+    .replace(/[?!.,]/g, "")
+    .trim();
 }
 
 function uniqueById() {
