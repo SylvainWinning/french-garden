@@ -81,7 +81,7 @@ button {
 }
 
 .summary-grid {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   margin-bottom: 16px;
 }
 
@@ -142,7 +142,8 @@ button {
 
 .legend,
 .bars,
-.recent-list {
+.recent-list,
+.reward-list {
   display: grid;
   gap: 10px;
   width: 100%;
@@ -150,7 +151,8 @@ button {
 
 .legend-row,
 .bar-row,
-.recent-item {
+.recent-item,
+.reward-item {
   align-items: center;
   display: grid;
   gap: 10px;
@@ -183,18 +185,22 @@ button {
   height: 100%;
 }
 
-.recent-item {
+.recent-item,
+.reward-item {
   border-top: 1px solid var(--line);
   grid-template-columns: 120px 1fr auto;
   padding-top: 10px;
 }
 
-.recent-item strong {
+.recent-item strong,
+.reward-item strong {
   font-size: 14px;
 }
 
 .recent-item span,
 .recent-item em,
+.reward-item span,
+.reward-item em,
 .bar-row span,
 .legend-row span {
   color: var(--muted);
@@ -218,14 +224,24 @@ textarea {
   width: 100%;
 }
 
-@media (max-width: 780px) {
+@media (max-width: 900px) {
   .dashboard-header,
-  .summary-grid,
   .dashboard-grid {
     grid-template-columns: 1fr;
   }
 
-  .recent-item {
+  .summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .recent-item,
+  .reward-item {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .summary-grid {
     grid-template-columns: 1fr;
   }
 }

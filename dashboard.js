@@ -15,6 +15,7 @@ document.querySelector("#import-csv").addEventListener("click", () => {
 function render() {
   const events = state.rows.map(normalizeRow).filter(Boolean);
   const answers = events.filter((event) => event.eventType === "answer");
+  const rewards = events.filter((event) => event.eventType === "reward_unlocked");
   const correct = answers.filter((event) => event.correct === true).length;
   const wrong = answers.filter((event) => event.correct === false).length;
   const sessions = new Set(events.map((event) => event.sessionId).filter(Boolean));
@@ -24,12 +25,15 @@ function render() {
   setText("total-sessions", sessions.size);
   setText("good-answers", correct);
   setText("max-score", latest.score);
+  setText("total-rewards", rewards.length);
+  setText("latest-reward", rewards.length ? rewards[rewards.length - 1].itemId || "Récompense" : "-");
 
   const totalAnswers = correct + wrong;
   setText("success-rate", totalAnswers ? `${Math.round((correct / totalAnswers) * 100)}%` : "0%");
   drawPie(correct, wrong);
   renderLegend(correct, wrong);
   renderActivityBars(answers);
+  renderRewards(rewards);
   renderRecent(events);
 }
 
@@ -69,7 +73,7 @@ function normalizeRow(row) {
   const action = fields.Action || "";
   return {
     receivedAt: row.receivedAt || fields.Quand || "",
-    eventType: action.includes("Réponse") ? "answer" : action.includes("Ouverture") ? "session_start" : "session_ping",
+    eventType: eventTypeFromAction(action),
     activityType: activityFromAction(action),
     correct: action.includes("bonne réponse") ? true : action.includes("mauvaise réponse") ? false : "",
     itemId: fields["Élément"] || "",
@@ -147,6 +151,22 @@ function renderActivityBars(answers) {
       .join("") || `<p>Aucune réponse pour l'instant.</p>`;
 }
 
+function renderRewards(rewards) {
+  document.querySelector("#reward-list").innerHTML =
+    rewards
+      .slice()
+      .reverse()
+      .map((reward) => {
+        const label = reward.itemId || "Récompense";
+        const details = [
+          `${reward.correctAnswers || 0} bonnes réponses`,
+          `${reward.score || 0} points`,
+        ].join(" · ");
+        return `<div class="reward-item"><span>${escapeHtml(reward.receivedAt)}</span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(details)}</em></div>`;
+      })
+      .join("") || `<p>Aucune récompense débloquée pour l'instant.</p>`;
+}
+
 function renderRecent(events) {
   const interesting = events
     .filter((event) => event.eventType !== "session_ping" && event.eventType !== "test")
@@ -159,33 +179,68 @@ function renderRecent(events) {
 
 function parseCsv(text) {
   if (!text) return [];
-  const lines = text.split(/\r?\n/).filter(Boolean);
-  return lines
-    .map((line) => {
-      const match = line.match(/^("([^"]|"")*"|[^,\t;]+)[,\t;]([\s\S]+)$/);
-      if (!match) return null;
+  return parseDelimitedRows(text)
+    .map((cells) => {
+      if (cells.length < 2) return null;
+      if (cells[0].trim() === "Horodateur" && cells[1].trim() === "Infos utiles") return null;
       return {
-        receivedAt: cleanCell(match[1]),
-        info: cleanCell(match[3]),
+        receivedAt: cells[0].trim(),
+        info: cells.slice(1).join(" ").trim(),
       };
     })
     .filter(Boolean);
 }
 
-function cleanCell(value) {
-  const trimmed = value.trim();
-  if (trimmed.startsWith('"') && trimmed.endsWith('"')) return trimmed.slice(1, -1).replace(/""/g, '"');
-  return trimmed;
+function parseDelimitedRows(text) {
+  const rows = [];
+  let row = [];
+  let cell = "";
+  let inQuotes = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    const next = text[index + 1];
+
+    if (char === '"' && inQuotes && next === '"') {
+      cell += '"';
+      index += 1;
+    } else if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (!inQuotes && (char === "," || char === ";" || char === "\t")) {
+      row.push(cell);
+      cell = "";
+    } else if (!inQuotes && char === "\n") {
+      row.push(cell);
+      if (row.some((value) => value.trim())) rows.push(row);
+      row = [];
+      cell = "";
+    } else if (char !== "\r") {
+      cell += char;
+    }
+  }
+
+  row.push(cell);
+  if (row.some((value) => value.trim())) rows.push(row);
+  return rows;
 }
 
 function actionFromJson(event) {
   if (event.eventType === "session_start") return "Ouverture de l'app";
   if (event.eventType === "session_ping") return "App encore ouverte";
+  if (event.eventType === "reward_unlocked") return "Récompense débloquée";
   if (event.eventType === "answer") return `Réponse ${event.activityType || "exercice"} (${event.correct ? "bonne réponse" : "mauvaise réponse"})`;
   return event.eventType || "Événement";
 }
 
+function eventTypeFromAction(action) {
+  if (action.includes("Réponse")) return "answer";
+  if (action.includes("Ouverture")) return "session_start";
+  if (action.includes("Récompense débloquée")) return "reward_unlocked";
+  return "session_ping";
+}
+
 function activityFromAction(action) {
+  if (action.includes("Récompense débloquée")) return "reward";
   const match = action.match(/^Réponse\s+([^(]+)/);
   return match ? match[1].trim() : "";
 }
