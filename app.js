@@ -1,4 +1,4 @@
-import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260525-filter-fix";
+import { phrases, pictureItems, situations, uiText, vocabulary } from "./data.js?v=20260525-mystery-rewards";
 import { createUsageTracker } from "./tracker.js?v=20260525-test-toggle";
 
 const STORAGE_KEY = "french-garden-progress-clean-start-20260524-tracker-reset";
@@ -837,13 +837,14 @@ function renderRewards() {
         state.progress.correctAnswers >= milestone.answers;
       const card = document.createElement("article");
       card.className = `reward-card ${unlocked ? "reward-card-unlocked" : ""}`;
+      const title = unlocked ? getRewardText(milestone) : t("mysteryReward");
       const status = unlocked
         ? formatText(t("rewardForAnswers"), { count: milestone.answers })
         : formatText(t("rewardLocked"), { count: milestone.answers });
       card.innerHTML = `
         <img class="reward-thumb" src="${milestone.image}" alt="" loading="lazy" />
         <div>
-          <strong>${getRewardText(milestone)}</strong>
+          <strong>${title}</strong>
           <span>${status}</span>
         </div>
       `;

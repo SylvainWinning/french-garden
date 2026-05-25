@@ -23,6 +23,7 @@ export const uiText = {
     rewardUnlockedEyebrow: "Reward unlocked",
     rewardForAnswers: "After {count} good answers",
     rewardLocked: "{count} good answers to unlock",
+    mysteryReward: "Mystery reward",
     copyRewardButton: "Copy reward image",
     rewardCopyInstructions:
       "Tap Copy reward image, then open Messages or WhatsApp and paste it to send it to Sylvain.",
@@ -98,6 +99,7 @@ export const uiText = {
     rewardUnlockedEyebrow: "Узнагарода адкрыта",
     rewardForAnswers: "Пасля {count} добрых адказаў",
     rewardLocked: "{count} добрых адказаў, каб адкрыць",
+    mysteryReward: "Таямнічая ўзнагарода",
     copyRewardButton: "Скапіраваць выяву ўзнагароды",
     rewardCopyInstructions:
       "Націсні, каб скапіраваць выяву ўзнагароды, потым адкрый Messages або WhatsApp і ўстаў яе для Сільвэна.",
