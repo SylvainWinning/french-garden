@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>French Garden Dashboard</title>
-    <link rel="stylesheet" href="./dashboard.css?v=20260525-rewards" />
+    <link rel="stylesheet" href="./dashboard.css?v=20260525-sessions" />
   </head>
   <body>
     <main class="dashboard-shell">
@@ -36,6 +36,10 @@
         <article>
           <span>Récompenses</span>
           <strong id="total-rewards">0</strong>
+        </article>
+        <article>
+          <span>Temps total</span>
+          <strong id="total-session-time">0 min</strong>
         </article>
       </section>
 
@@ -86,6 +90,17 @@
         <article class="panel">
           <div class="panel-title">
             <div>
+              <p>Sessions</p>
+              <h2>Durée estimée</h2>
+            </div>
+            <strong id="average-session-time">0 min</strong>
+          </div>
+          <div id="session-duration-list" class="session-duration-list"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <div>
               <p>Importer</p>
               <h2>Coller un export Google Sheets</h2>
             </div>
@@ -95,6 +110,6 @@
         </article>
       </section>
     </main>
-    <script type="module" src="./dashboard.js?v=20260525-rewards"></script>
+    <script type="module" src="./dashboard.js?v=20260525-sessions"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-import { trackerRows } from "./dashboard-data.js?v=20260525-rewards";
+import { trackerRows } from "./dashboard-data.js?v=20260525-sessions";
 
 const state = { rows: trackerRows };
 
@@ -19,6 +19,7 @@ function render() {
   const correct = answers.filter((event) => event.correct === true).length;
   const wrong = answers.filter((event) => event.correct === false).length;
   const sessions = new Set(events.map((event) => event.sessionId).filter(Boolean));
+  const sessionDurations = getSessionDurations(events);
   const latest = latestProgress(events);
 
   setText("total-events", events.length);
@@ -27,6 +28,8 @@ function render() {
   setText("max-score", latest.score);
   setText("total-rewards", rewards.length);
   setText("latest-reward", rewards.length ? rewards[rewards.length - 1].itemId || "Récompense" : "-");
+  setText("total-session-time", sessionDurations.length ? formatDuration(sumDurations(sessionDurations)) : "0 min");
+  setText("average-session-time", sessionDurations.length ? formatDuration(averageDuration(sessionDurations)) : "0 min");
 
   const totalAnswers = correct + wrong;
   setText("success-rate", totalAnswers ? `${Math.round((correct / totalAnswers) * 100)}%` : "0%");
@@ -34,6 +37,7 @@ function render() {
   renderLegend(correct, wrong);
   renderActivityBars(answers);
   renderRewards(rewards);
+  renderSessionDurations(sessionDurations);
   renderRecent(events);
 }
 
@@ -46,6 +50,7 @@ function normalizeRow(row) {
       const parsed = JSON.parse(raw);
       return {
         receivedAt: row.receivedAt,
+        occurredAtMs: parseEventTime(parsed.timestamp || row.receivedAt),
         eventType: parsed.eventType,
         activityType: parsed.activityType || "",
         correct: parsed.correct === true ? true : parsed.correct === false ? false : "",
@@ -73,6 +78,7 @@ function normalizeRow(row) {
   const action = fields.Action || "";
   return {
     receivedAt: row.receivedAt || fields.Quand || "",
+    occurredAtMs: parseEventTime(fields.Quand || row.receivedAt),
     eventType: eventTypeFromAction(action),
     activityType: activityFromAction(action),
     correct: action.includes("bonne réponse") ? true : action.includes("mauvaise réponse") ? false : "",
@@ -95,6 +101,51 @@ function latestProgress(events) {
     }),
     { score: 0, correctAnswers: 0 }
   );
+}
+
+function getSessionDurations(events) {
+  const grouped = events
+    .filter((event) => event.sessionId && Number.isFinite(event.occurredAtMs))
+    .reduce((map, event) => {
+      const current = map.get(event.sessionId) || {
+        sessionId: event.sessionId,
+        startedAt: event.receivedAt,
+        endedAt: event.receivedAt,
+        startedAtMs: event.occurredAtMs,
+        endedAtMs: event.occurredAtMs,
+        eventCount: 0,
+        answerCount: 0,
+      };
+
+      if (event.occurredAtMs < current.startedAtMs) {
+        current.startedAtMs = event.occurredAtMs;
+        current.startedAt = event.receivedAt;
+      }
+      if (event.occurredAtMs > current.endedAtMs) {
+        current.endedAtMs = event.occurredAtMs;
+        current.endedAt = event.receivedAt;
+      }
+      current.eventCount += 1;
+      if (event.eventType === "answer") current.answerCount += 1;
+      map.set(event.sessionId, current);
+      return map;
+    }, new Map());
+
+  return Array.from(grouped.values())
+    .map((session) => ({
+      ...session,
+      durationMs: Math.max(0, session.endedAtMs - session.startedAtMs),
+    }))
+    .sort((a, b) => b.startedAtMs - a.startedAtMs);
+}
+
+function sumDurations(sessions) {
+  return sessions.reduce((total, session) => total + session.durationMs, 0);
+}
+
+function averageDuration(sessions) {
+  if (!sessions.length) return 0;
+  return Math.round(sumDurations(sessions) / sessions.length);
 }
 
 function drawPie(correct, wrong) {
@@ -165,6 +216,19 @@ function renderRewards(rewards) {
         return `<div class="reward-item"><span>${escapeHtml(reward.receivedAt)}</span><strong>${escapeHtml(label)}</strong><em>${escapeHtml(details)}</em></div>`;
       })
       .join("") || `<p>Aucune récompense débloquée pour l'instant.</p>`;
+}
+
+function renderSessionDurations(sessions) {
+  document.querySelector("#session-duration-list").innerHTML =
+    sessions
+      .map((session) => {
+        const details = [
+          `${session.answerCount} réponse${session.answerCount > 1 ? "s" : ""}`,
+          `${session.eventCount} événement${session.eventCount > 1 ? "s" : ""}`,
+        ].join(" · ");
+        return `<div class="session-duration-item"><span>${escapeHtml(session.startedAt)}</span><strong>${escapeHtml(formatDuration(session.durationMs))}</strong><em>${escapeHtml(details)}</em></div>`;
+      })
+      .join("") || `<p>Aucune durée de session pour l'instant.</p>`;
 }
 
 function renderRecent(events) {
@@ -243,6 +307,27 @@ function activityFromAction(action) {
   if (action.includes("Récompense débloquée")) return "reward";
   const match = action.match(/^Réponse\s+([^(]+)/);
   return match ? match[1].trim() : "";
+}
+
+function parseEventTime(value) {
+  if (!value) return NaN;
+  const parsed = Date.parse(value);
+  if (Number.isFinite(parsed)) return parsed;
+
+  const match = String(value).match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?/);
+  if (!match) return NaN;
+  const [, day, month, year, hour, minute, second = "0"] = match;
+  return new Date(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second)).getTime();
+}
+
+function formatDuration(milliseconds) {
+  const totalMinutes = Math.max(0, Math.round(milliseconds / 60000));
+  if (totalMinutes < 1) return "< 1 min";
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  if (!hours) return `${minutes} min`;
+  if (!minutes) return `${hours} h`;
+  return `${hours} h ${minutes} min`;
 }
 
 function legendRow(color, label, count) {
