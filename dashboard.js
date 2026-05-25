@@ -1,6 +1,10 @@
-import { trackerRows } from "./dashboard-data.js?v=20260525-test-toggle";
+import { trackerRows } from "./dashboard-data.js?v=20260525-time-reset";
 
 const state = { rows: trackerRows };
+const LEGACY_CODEX_SESSION_IDS = new Set([
+  "81ccb76d-f5e3-4f88-ae8c-278c08750263",
+  "codex-test",
+]);
 
 render();
 
@@ -318,6 +322,7 @@ function activityFromAction(action) {
 
 function sourceFromPayload(payload) {
   const userAgent = payload.userAgent || "";
+  if (LEGACY_CODEX_SESSION_IDS.has(payload.sessionId)) return "Codex";
   if (/codex|electron|curl/i.test(userAgent)) return "Codex";
   if (payload.clientId === "codex-test" || payload.sessionId === "codex-test" || payload.appLanguage === "test") return "Codex";
   return "Elle";
