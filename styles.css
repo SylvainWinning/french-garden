@@ -42,7 +42,6 @@ button {
   background: var(--ink);
   border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 999px;
-  bottom: 12px;
   box-shadow: 0 8px 18px rgba(52, 34, 56, 0.18);
   color: white;
   cursor: pointer;
@@ -52,11 +51,8 @@ button {
   min-height: 28px;
   opacity: 0.42;
   padding: 0 10px;
-  position: fixed;
-  right: 12px;
   text-transform: uppercase;
   width: auto;
-  z-index: 20;
 }
 
 .codex-test-mode.is-active {
@@ -84,6 +80,13 @@ button {
 .codex-test-toast.is-visible {
   opacity: 1;
   transform: translateY(0);
+}
+
+.test-mode-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-right: 2px;
 }
 
 .app-shell {
