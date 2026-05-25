@@ -1,4 +1,4 @@
-import { trackerRows } from "./dashboard-data.js?v=20260525-dashboard";
+import { trackerRows } from "./dashboard-data.js?v=20260525-rewards";
 
 const state = { rows: trackerRows };
 
