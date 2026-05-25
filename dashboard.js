@@ -1,4 +1,4 @@
-import { trackerRows } from "./dashboard-data.js?v=20260525-sessions";
+import { trackerRows } from "./dashboard-data.js?v=20260525-source";
 
 const state = { rows: trackerRows };
 
@@ -61,6 +61,7 @@ function normalizeRow(row) {
         reviewCount: Number(parsed.reviewCount || 0),
         appLanguage: parsed.appLanguage || "",
         sessionId: parsed.sessionId || "",
+        source: parsed.source || sourceFromPayload(parsed),
         actionLabel: actionFromJson(parsed),
       };
     } catch {
@@ -89,6 +90,7 @@ function normalizeRow(row) {
     reviewCount: Number(fields["À revoir"] || 0),
     appLanguage: fields.Langue || "",
     sessionId: fields.Session || "",
+    source: fields.Source || "Non précisé",
     actionLabel: action,
   };
 }
@@ -115,6 +117,7 @@ function getSessionDurations(events) {
         endedAtMs: event.occurredAtMs,
         eventCount: 0,
         answerCount: 0,
+        sources: new Set(),
       };
 
       if (event.occurredAtMs < current.startedAtMs) {
@@ -127,6 +130,7 @@ function getSessionDurations(events) {
       }
       current.eventCount += 1;
       if (event.eventType === "answer") current.answerCount += 1;
+      if (event.source) current.sources.add(event.source);
       map.set(event.sessionId, current);
       return map;
     }, new Map());
@@ -135,6 +139,7 @@ function getSessionDurations(events) {
     .map((session) => ({
       ...session,
       durationMs: Math.max(0, session.endedAtMs - session.startedAtMs),
+      source: summarizeSources(session.sources),
     }))
     .sort((a, b) => b.startedAtMs - a.startedAtMs);
 }
@@ -223,6 +228,7 @@ function renderSessionDurations(sessions) {
     sessions
       .map((session) => {
         const details = [
+          session.source,
           `${session.answerCount} réponse${session.answerCount > 1 ? "s" : ""}`,
           `${session.eventCount} événement${session.eventCount > 1 ? "s" : ""}`,
         ].join(" · ");
@@ -307,6 +313,22 @@ function activityFromAction(action) {
   if (action.includes("Récompense débloquée")) return "reward";
   const match = action.match(/^Réponse\s+([^(]+)/);
   return match ? match[1].trim() : "";
+}
+
+function sourceFromPayload(payload) {
+  const userAgent = payload.userAgent || "";
+  if (/codex|electron|curl/i.test(userAgent)) return "Codex";
+  if (payload.clientId === "codex-test" || payload.sessionId === "codex-test" || payload.appLanguage === "test") return "Codex";
+  if (userAgent) return "Elle";
+  return "Non précisé";
+}
+
+function summarizeSources(sources) {
+  const labels = Array.from(sources).filter(Boolean);
+  if (!labels.length) return "Non précisé";
+  const precise = labels.filter((label) => label !== "Non précisé");
+  const unique = Array.from(new Set(precise.length ? precise : labels));
+  return unique.length === 1 ? unique[0] : "Mixte";
 }
 
 function parseEventTime(value) {

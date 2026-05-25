@@ -27,6 +27,7 @@ export function createUsageTracker({ getLanguage, getStats }) {
       sessionId,
       clientId,
       userAgent: navigator.userAgent,
+      source: getSourceLabel(navigator.userAgent),
     };
 
     try {
@@ -75,6 +76,7 @@ function formatUsefulSummary(payload) {
 
   if (payload.itemId) lines.splice(2, 0, `• Élément : ${payload.itemId}`);
   if (payload.appLanguage) lines.push(`• Langue : ${payload.appLanguage}`);
+  if (payload.source) lines.push(`• Source : ${payload.source}`);
   if (payload.sessionId) lines.push(`• Session : ${payload.sessionId.slice(0, 8)}`);
 
   return lines.join("\n");
@@ -100,6 +102,10 @@ function formatWhen(timestamp) {
   } catch {
     return timestamp;
   }
+}
+
+function getSourceLabel(userAgent) {
+  return /codex|electron|curl/i.test(userAgent || "") ? "Codex" : "Elle";
 }
 
 function getOrCreateClientId() {
