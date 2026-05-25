@@ -3,6 +3,7 @@ import { createUsageTracker } from "./tracker.js?v=20260525-test-toggle";
 
 const STORAGE_KEY = "french-garden-progress-clean-start-20260524-tracker-reset";
 const TEST_MODE_KEY = "french-garden-codex-test-mode";
+const TEST_MODE_TOAST_KEY = "french-garden-codex-test-toast";
 const SUPPORTED_LANGUAGES = new Set(["en", "be"]);
 const HERO_PHOTOS = [
   "./assets/hero/hero-1.jpg",
@@ -150,6 +151,7 @@ const elements = {
   rewardClose: document.querySelector("#reward-close"),
   rewardHelper: document.querySelector("#reward-helper"),
   testModeToggle: document.querySelector("#codex-test-mode"),
+  testModeToast: document.querySelector("#codex-test-toast"),
   tabs: document.querySelectorAll(".tab"),
   views: document.querySelectorAll(".view"),
   shuffleCard: document.querySelector("#shuffle-card"),
@@ -196,6 +198,7 @@ function init() {
   nextPhrase();
   renderSituations();
   renderTestModeToggle();
+  showPendingTestModeToast();
   bindEvents();
   tracker.track("session_start");
   tracker.startHeartbeat();
@@ -209,10 +212,12 @@ function toggleTestMode() {
   const enabled = !isTestModeEnabled();
   try {
     localStorage.setItem(TEST_MODE_KEY, enabled ? "on" : "off");
+    if (enabled) sessionStorage.setItem(TEST_MODE_TOAST_KEY, "on");
   } catch {
     // Test mode only labels private tracking events.
   }
   renderTestModeToggle();
+  if (!enabled) showTestModeToast(false);
   if (enabled) window.location.reload();
 }
 
@@ -229,6 +234,24 @@ function renderTestModeToggle() {
   elements.testModeToggle.classList.toggle("is-active", enabled);
   elements.testModeToggle.setAttribute("aria-pressed", String(enabled));
   elements.testModeToggle.title = enabled ? "Codex test mode on" : "Codex test mode off";
+}
+
+function showTestModeToast(enabled) {
+  elements.testModeToast.textContent = enabled ? "Mode test Codex activé" : "Mode test Codex désactivé";
+  elements.testModeToast.classList.add("is-visible");
+  window.setTimeout(() => {
+    elements.testModeToast.classList.remove("is-visible");
+  }, 2200);
+}
+
+function showPendingTestModeToast() {
+  try {
+    if (sessionStorage.getItem(TEST_MODE_TOAST_KEY) !== "on") return;
+    sessionStorage.removeItem(TEST_MODE_TOAST_KEY);
+    showTestModeToast(true);
+  } catch {
+    // The visual confirmation is helpful but not required.
+  }
 }
 
 function bindEvents() {

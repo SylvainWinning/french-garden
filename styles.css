@@ -40,23 +40,50 @@ button {
 
 .codex-test-mode {
   background: var(--ink);
-  border: 0;
+  border: 1px solid rgba(255, 255, 255, 0.78);
   border-radius: 999px;
-  bottom: 8px;
+  bottom: 12px;
+  box-shadow: 0 8px 18px rgba(52, 34, 56, 0.18);
+  color: white;
   cursor: pointer;
-  height: 10px;
-  min-height: 10px;
-  opacity: 0.08;
-  padding: 0;
+  font-size: 0.68rem;
+  font-weight: 900;
+  height: 28px;
+  min-height: 28px;
+  opacity: 0.42;
+  padding: 0 10px;
   position: fixed;
-  right: 8px;
-  width: 10px;
+  right: 12px;
+  text-transform: uppercase;
+  width: auto;
   z-index: 20;
 }
 
 .codex-test-mode.is-active {
   background: var(--pink);
-  opacity: 0.55;
+  opacity: 0.95;
+}
+
+.codex-test-toast {
+  background: rgba(52, 34, 56, 0.92);
+  border-radius: 8px;
+  bottom: 48px;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 900;
+  opacity: 0;
+  padding: 9px 12px;
+  pointer-events: none;
+  position: fixed;
+  right: 12px;
+  transform: translateY(6px);
+  transition: opacity 0.18s ease, transform 0.18s ease;
+  z-index: 20;
+}
+
+.codex-test-toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
 }
 
 .app-shell {
