@@ -1,6 +1,6 @@
 const state = { rows: window.trackerRows || [] };
-const TRACKER_SPREADSHEET_ID = "1jH-f1Pz5pMgW2ts5BSBwaChSIivFcfjkPO6p_4PIWDw";
-const TRACKER_SHEET_NAME = "French Garden Usage Tracker";
+const TRACKER_SPREADSHEET_ID = "1K8oAzPZsYlDL1qhDy5Tpj7mh9yQLPxsiJC6aeNz38dU";
+const TRACKER_SHEET_NAME = "Réponses au formulaire 1";
 const LEGACY_CODEX_SESSION_IDS = new Set([
   "81ccb76d-f5e3-4f88-ae8c-278c08750263",
   "codex-test",
@@ -326,6 +326,16 @@ async function loadTrackerRowsFromGoogleSheet() {
   const headers = table.cols.map((column) => column.label || column.id || "");
   const headerLookup = new Map(headers.map((header, index) => [normalizeHeader(header), index]));
 
+  if (hasFormResponseHeaders(headerLookup)) {
+    return table.rows
+      .map((row) => row.c.map((cell) => formatGoogleCell(cell)))
+      .map((cells) => ({
+        receivedAt: cells[headerLookup.get("horodateur")] || "",
+        info: cells[headerLookup.get("infosutiles")] || "",
+      }))
+      .filter((row) => row.receivedAt && row.info);
+  }
+
   if (!hasStructuredTrackerHeaders(headerLookup)) {
     throw new Error("Format Google Sheets non reconnu");
   }
@@ -430,6 +440,10 @@ function parseCsv(text) {
 
 function hasStructuredTrackerHeaders(headerLookup) {
   return headerLookup.has("eventtype") && headerLookup.has("sessionid");
+}
+
+function hasFormResponseHeaders(headerLookup) {
+  return headerLookup.has("horodateur") && headerLookup.has("infosutiles");
 }
 
 function rowFromStructuredCsv(cells, headerLookup) {
