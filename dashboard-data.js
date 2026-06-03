@@ -1,4 +1,4 @@
-export const trackerRows = [
+window.trackerRows = [
   {
     receivedAt: "24/05/2026 19:11:06",
     info: "{\"timestamp\":\"2026-05-24T17:15:00.000Z\",\"eventType\":\"test\",\"activityType\":\"verification\",\"correct\":\"\",\"itemId\":\"manual-test\",\"score\":0,\"correctAnswers\":0,\"practicedCount\":0,\"reviewCount\":0,\"appLanguage\":\"test\",\"sessionId\":\"codex-test\",\"clientId\":\"codex-test\",\"userAgent\":\"curl\"}",

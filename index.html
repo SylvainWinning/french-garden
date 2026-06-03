@@ -50,6 +50,31 @@
           </div>
         </section>
 
+        <section class="today-panel" aria-live="polite">
+          <div class="today-intro">
+            <div>
+              <p class="eyebrow" data-i18n="todayEyebrow">Daily session</p>
+              <h2 data-i18n="todayTitle">Today’s Garden</h2>
+              <p data-i18n="todayCopy">
+                A short mixed round with review words, pictures, and phrases.
+              </p>
+            </div>
+            <button id="today-start" class="primary-button today-start-button" type="button">
+              <span data-i18n="todayStartButton">Start today’s practice</span>
+            </button>
+          </div>
+
+          <div id="today-session" class="today-session" hidden>
+            <div class="today-meter">
+              <span id="today-progress-label"></span>
+              <span class="progress-track">
+                <span id="today-progress-bar"></span>
+              </span>
+            </div>
+            <article id="today-card" class="today-card"></article>
+          </div>
+        </section>
+
         <section class="stats-grid" aria-live="polite">
           <div>
             <span data-i18n="scoreLabel">Score</span>

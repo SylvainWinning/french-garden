@@ -118,6 +118,7 @@ const state = {
   matchedIds: new Set(),
   matchRoundSize: 0,
   activeReward: null,
+  todaySession: null,
   progress: loadProgress(),
 };
 
@@ -152,6 +153,11 @@ const elements = {
   rewardHelper: document.querySelector("#reward-helper"),
   testModeToggle: document.querySelector("#codex-test-mode"),
   testModeToast: document.querySelector("#codex-test-toast"),
+  todayStart: document.querySelector("#today-start"),
+  todaySession: document.querySelector("#today-session"),
+  todayProgressLabel: document.querySelector("#today-progress-label"),
+  todayProgressBar: document.querySelector("#today-progress-bar"),
+  todayCard: document.querySelector("#today-card"),
   tabs: document.querySelectorAll(".tab"),
   views: document.querySelectorAll(".view"),
   shuffleCard: document.querySelector("#shuffle-card"),
@@ -191,6 +197,7 @@ function init() {
   renderStats();
   renderProgress();
   renderRewards();
+  renderTodaySession();
   renderCard();
   nextQuiz();
   nextPicture();
@@ -269,25 +276,30 @@ function bindEvents() {
     renderStats();
     renderProgress();
     renderRewards();
+    renderTodaySession();
   });
 
   elements.levelFilter.addEventListener("change", (event) => {
     state.levelFilter = event.target.value;
+    resetTodaySession();
     populateCategoryFilter();
     resetPracticeViews();
   });
 
   elements.categoryFilter.addEventListener("change", (event) => {
     state.categoryFilter = event.target.value;
+    resetTodaySession();
     resetPracticeViews();
   });
 
   elements.reviewFilter.addEventListener("change", (event) => {
     state.reviewOnly = event.target.checked;
+    resetTodaySession();
     resetPracticeViews();
   });
 
   elements.testModeToggle.addEventListener("click", toggleTestMode);
+  elements.todayStart.addEventListener("click", startTodaySession);
 
   elements.rewardCopy.addEventListener("click", copyActiveRewardImage);
   elements.rewardClose.addEventListener("click", closeRewardModal);
@@ -324,11 +336,26 @@ function translateInterface() {
 }
 
 function showView(viewName) {
+  let activeTab = null;
   elements.tabs.forEach((tab) => {
-    tab.classList.toggle("active", tab.dataset.view === viewName);
+    const isActive = tab.dataset.view === viewName;
+    tab.classList.toggle("active", isActive);
+    if (isActive) activeTab = tab;
   });
   elements.views.forEach((view) => {
     view.classList.toggle("active-view", view.id === viewName);
+  });
+  ensureActiveTabVisible(activeTab);
+}
+
+function ensureActiveTabVisible(tab) {
+  if (!tab) return;
+  window.requestAnimationFrame(() => {
+    tab.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+      behavior: "smooth",
+    });
   });
 }
 
@@ -337,6 +364,331 @@ function renderStats() {
   elements.streak.textContent = state.progress.correctAnswers;
   elements.practiced.textContent = state.progress.practiced.length;
   elements.reviewCount.textContent = getReviewIds().length;
+}
+
+function resetTodaySession() {
+  state.todaySession = null;
+  renderTodaySession();
+}
+
+function startTodaySession() {
+  const steps = buildTodaySteps();
+  state.todaySession = {
+    steps,
+    index: 0,
+    correct: 0,
+    wrong: 0,
+    scoreStart: state.progress.score,
+    complete: false,
+  };
+  renderTodaySession();
+}
+
+function buildTodaySteps() {
+  const vocabularyPool = getTodayVocabularyPool();
+  const picturePool = getTodayPicturePool();
+  const phrasePool = getTodayPhrasePool();
+  const reviewIds = new Set(getReviewIds());
+  const used = new Set();
+  const steps = [];
+
+  const takeVocabulary = (preferReview = false) => {
+    const item = vocabularyPool.find(
+      (word) => !used.has(`vocabulary:${word.id}`) && (!preferReview || reviewIds.has(word.id))
+    );
+    if (!item) return null;
+    used.add(`vocabulary:${item.id}`);
+    return item;
+  };
+  const takePicture = () => {
+    const item = picturePool.find((picture) => !used.has(`picture:${picture.id}`));
+    if (!item) return null;
+    used.add(`picture:${item.id}`);
+    return item;
+  };
+  const takePhrase = () => {
+    const item = phrasePool.find((phrase) => !used.has(`phrase:${phrase.id}`));
+    if (!item) return null;
+    used.add(`phrase:${item.id}`);
+    return item;
+  };
+  const addStep = (step) => {
+    if (step && steps.length < 7) steps.push(step);
+  };
+
+  addStep(createTodayCardStep(takeVocabulary(true) || takeVocabulary()));
+  addStep(createTodayQuizStep(takeVocabulary()));
+  addStep(createTodayPictureStep(takePicture()));
+  addStep(createTodayPhraseStep(takePhrase()));
+  addStep(createTodayQuizStep(takeVocabulary()));
+  addStep(createTodayPhraseStep(takePhrase()));
+  addStep(createTodayPictureStep(takePicture()));
+
+  while (steps.length < 5) {
+    const next =
+      createTodayQuizStep(takeVocabulary()) ||
+      createTodayPictureStep(takePicture()) ||
+      createTodayPhraseStep(takePhrase());
+    if (!next) break;
+    addStep(next);
+  }
+
+  return steps;
+}
+
+function createTodayCardStep(item) {
+  if (!item) return null;
+  return { type: "card", item, progressId: item.id };
+}
+
+function createTodayQuizStep(item) {
+  if (!item) return null;
+  const answerCount = getAnswerOptionCount(item);
+  return {
+    type: "quiz",
+    item,
+    progressId: item.id,
+    answer: item.translations[state.uiLanguage],
+    options: shuffle([
+      item.translations[state.uiLanguage],
+      ...getDistractorTranslations(item, answerCount - 1),
+    ]),
+  };
+}
+
+function createTodayPictureStep(item) {
+  if (!item) return null;
+  return {
+    type: "picture",
+    item,
+    progressId: getVocabularyIdByFrench(item.french),
+    answer: item.french,
+    options: shuffle([
+      item.french,
+      ...getPictureDistractorPool(item)
+        .filter((picture) => picture.id !== item.id)
+        .slice(0, getPictureOptionCount(item) - 1)
+        .map((picture) => picture.french),
+    ]),
+  };
+}
+
+function createTodayPhraseStep(item) {
+  if (!item) return null;
+  return {
+    type: "phrase",
+    item,
+    progressId: item.id,
+    answer: item.missing,
+    options: shuffle(item.options),
+  };
+}
+
+function renderTodaySession() {
+  const session = state.todaySession;
+  elements.todayStart.hidden = Boolean(session && !session.complete && session.steps.length);
+  elements.todaySession.hidden = !session;
+
+  if (!session) return;
+
+  if (!session.steps.length) {
+    elements.todayProgressLabel.textContent = t("todayEmptyTitle");
+    elements.todayProgressBar.style.width = "0%";
+    elements.todayCard.replaceChildren(createTodayEmptyState());
+    return;
+  }
+
+  if (session.complete) {
+    renderTodaySummary();
+    return;
+  }
+
+  const current = session.index + 1;
+  const total = session.steps.length;
+  const completed = session.index + (session.steps[session.index]?.answered ? 1 : 0);
+  elements.todayProgressLabel.textContent = formatText(t("todayProgressLabel"), {
+    current,
+    total,
+  });
+  elements.todayProgressBar.style.width = `${Math.round((completed / total) * 100)}%`;
+  renderTodayStep(session.steps[session.index]);
+}
+
+function renderTodayStep(step) {
+  elements.todayCard.replaceChildren();
+
+  const heading = document.createElement("div");
+  heading.className = "today-card-heading";
+  const eyebrow = document.createElement("p");
+  eyebrow.className = "eyebrow";
+  eyebrow.textContent = t(`today${capitalize(step.type)}Label`);
+  const title = document.createElement("h3");
+  title.textContent = getTodayStepTitle(step);
+  const prompt = document.createElement("p");
+  prompt.textContent = getTodayStepPrompt(step);
+  heading.append(eyebrow, title, prompt);
+  elements.todayCard.append(heading);
+
+  if (step.type === "picture") {
+    const image = document.createElement("img");
+    image.className = "today-picture";
+    image.src = step.item.image;
+    image.alt = step.item.alt[state.uiLanguage] || step.item.alt.en;
+    elements.todayCard.append(image);
+  }
+
+  if (step.type === "card") {
+    const actions = document.createElement("div");
+    actions.className = "today-actions";
+    actions.append(
+      createTodayAnswerButton(t("knowButton"), "know", step),
+      createTodayAnswerButton(t("reviewButton"), "review", step)
+    );
+    elements.todayCard.append(actions);
+  } else {
+    const options = document.createElement("div");
+    options.className = "option-grid";
+    options.replaceChildren(
+      ...step.options.map((optionText) => createTodayAnswerButton(optionText, optionText, step))
+    );
+    elements.todayCard.append(options);
+  }
+
+  if (step.answered) renderTodayFeedback(step);
+}
+
+function createTodayAnswerButton(label, value, step) {
+  const button = document.createElement("button");
+  button.className = "answer-button";
+  button.type = "button";
+  button.textContent = label;
+  button.disabled = Boolean(step.answered);
+  if (step.answered && value === step.selected) button.classList.add("is-selected");
+  button.addEventListener("click", () => answerTodayStep(value));
+  return button;
+}
+
+function renderTodayFeedback(step) {
+  const feedback = document.createElement("p");
+  feedback.className = `feedback ${step.correct ? "success" : "error"}`;
+  feedback.textContent = step.correct
+    ? getSuccessMessage()
+    : formatText(t("todayCorrectAnswer"), { answer: getTodayStepAnswer(step) });
+
+  const nextButton = document.createElement("button");
+  nextButton.className = "primary-button";
+  nextButton.type = "button";
+  nextButton.textContent =
+    state.todaySession.index === state.todaySession.steps.length - 1
+      ? t("todayFinishButton")
+      : t("todayNextButton");
+  nextButton.addEventListener("click", nextTodayStep);
+
+  elements.todayCard.append(feedback, nextButton);
+}
+
+function answerTodayStep(value) {
+  const session = state.todaySession;
+  const step = session?.steps[session.index];
+  if (!step || step.answered) return;
+
+  const isCorrect = step.type === "card" ? value === "know" : value === step.answer;
+  step.answered = true;
+  step.selected = value;
+  step.correct = isCorrect;
+  if (isCorrect) session.correct += 1;
+  else session.wrong += 1;
+
+  updateScore(isCorrect, step.progressId);
+  recordAttempt(step.progressId, isCorrect);
+  trackAnswer("today", step.progressId, isCorrect);
+  renderTodaySession();
+  if (isCorrect) celebrate(elements.todayCard.querySelector(".feedback"));
+}
+
+function nextTodayStep() {
+  const session = state.todaySession;
+  if (!session) return;
+
+  if (session.index >= session.steps.length - 1) {
+    session.complete = true;
+  } else {
+    session.index += 1;
+  }
+  renderTodaySession();
+}
+
+function renderTodaySummary() {
+  const session = state.todaySession;
+  const total = session.steps.length;
+  const gained = state.progress.score - session.scoreStart;
+  const missedLabels = session.steps
+    .filter((step) => step.answered && !step.correct)
+    .map(getTodayStepAnswer)
+    .filter(uniqueValue());
+
+  elements.todayProgressLabel.textContent = t("todayCompleteLabel");
+  elements.todayProgressBar.style.width = "100%";
+  elements.todayCard.replaceChildren();
+
+  const title = document.createElement("h3");
+  title.textContent = t("todaySummaryTitle");
+  const stats = document.createElement("p");
+  stats.className = "today-summary-stat";
+  stats.textContent = formatText(t("todaySummaryStats"), {
+    correct: session.correct,
+    total,
+    score: gained,
+  });
+  const review = document.createElement("p");
+  review.className = "today-summary-review";
+  review.textContent = missedLabels.length
+    ? formatText(t("todaySummaryReview"), { items: missedLabels.join(", ") })
+    : t("todaySummaryClean");
+  const button = document.createElement("button");
+  button.className = "primary-button";
+  button.type = "button";
+  button.textContent = t("todayPracticeAgain");
+  button.addEventListener("click", startTodaySession);
+
+  elements.todayCard.append(title, stats, review, button);
+}
+
+function createTodayEmptyState() {
+  const wrapper = document.createElement("div");
+  wrapper.className = "today-empty";
+  const title = document.createElement("h3");
+  title.textContent = t("todayEmptyTitle");
+  const copy = document.createElement("p");
+  copy.textContent = t("todayEmptyCopy");
+  const button = document.createElement("button");
+  button.className = "secondary-button";
+  button.type = "button";
+  button.textContent = t("todayPracticeAgain");
+  button.addEventListener("click", startTodaySession);
+  wrapper.append(title, copy, button);
+  return wrapper;
+}
+
+function getTodayStepTitle(step) {
+  if (step.type === "phrase") return step.item.text.replace(step.item.missing, "_____");
+  if (step.type === "picture") return t("picturesPrompt");
+  return step.item.french;
+}
+
+function getTodayStepPrompt(step) {
+  if (step.type === "card") return step.item.translations[state.uiLanguage];
+  if (step.type === "quiz") return t("quizPrompt");
+  if (step.type === "picture") return step.item.alt[state.uiLanguage] || step.item.alt.en;
+  return step.item.translations[state.uiLanguage];
+}
+
+function getTodayStepAnswer(step) {
+  if (step.type === "card" || step.type === "quiz") {
+    return step.item.translations[state.uiLanguage] || step.item.translations.en;
+  }
+  if (step.type === "picture") return step.item.french;
+  return step.item.missing;
 }
 
 function renderCard() {
@@ -907,12 +1259,42 @@ async function copyActiveRewardImage() {
   if (!state.activeReward) return;
 
   const message = buildRewardMessage(state.activeReward);
+  elements.rewardCopy.disabled = true;
+  elements.rewardHelper.textContent = t("rewardPreparing");
   try {
     const blob = await createRewardShareImage(state.activeReward);
-    await navigator.clipboard.write([
-      new ClipboardItem({ [blob.type]: blob }),
-    ]);
-    elements.rewardHelper.textContent = t("rewardCopied");
+    const file = new File([blob], `french-garden-${state.activeReward.id}.png`, {
+      type: blob.type,
+    });
+
+    if (shouldPreferShareSheet(file)) {
+      await navigator.share({
+        files: [file],
+        title: "French Garden",
+        text: message,
+      });
+      elements.rewardHelper.textContent = t("rewardShared");
+      return;
+    }
+
+    if (canCopyImageToClipboard()) {
+      await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+      elements.rewardHelper.textContent = t("rewardCopied");
+      return;
+    }
+
+    if (canShareRewardFile(file)) {
+      await navigator.share({
+        files: [file],
+        title: "French Garden",
+        text: message,
+      });
+      elements.rewardHelper.textContent = t("rewardShared");
+      return;
+    }
+
+    await navigator.clipboard.writeText(message);
+    elements.rewardHelper.textContent = t("rewardCopyFallback");
   } catch {
     try {
       await navigator.clipboard.writeText(message);
@@ -920,7 +1302,30 @@ async function copyActiveRewardImage() {
     } catch {
       elements.rewardHelper.textContent = message;
     }
+  } finally {
+    elements.rewardCopy.disabled = false;
   }
+}
+
+function shouldPreferShareSheet(file) {
+  return isAppleTouchDevice() && canShareRewardFile(file);
+}
+
+function canShareRewardFile(file) {
+  return Boolean(
+    navigator.share &&
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+  );
+}
+
+function canCopyImageToClipboard() {
+  return Boolean(navigator.clipboard?.write && window.ClipboardItem);
+}
+
+function isAppleTouchDevice() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 }
 
 async function createRewardShareImage(reward) {
@@ -1087,6 +1492,51 @@ function getPracticeSituations() {
   return situations.filter((situation) => filtersMatchCategory(situation.category));
 }
 
+function getTodayVocabularyPool() {
+  return [...getPracticeVocabulary()].sort((a, b) =>
+    getTodayPriority(b.id) - getTodayPriority(a.id)
+  );
+}
+
+function getTodayPicturePool() {
+  return [...getPracticePictures()].sort((a, b) =>
+    getTodayPriority(getVocabularyIdByFrench(b.french)) -
+    getTodayPriority(getVocabularyIdByFrench(a.french))
+  );
+}
+
+function getTodayPhrasePool() {
+  const pool = getPracticePhrases();
+  const filtered = state.reviewOnly
+    ? pool.filter((phrase) => isProgressIdInReview(phrase.id))
+    : pool;
+
+  return [...filtered].sort((a, b) =>
+    getTodayPriority(b.id) - getTodayPriority(a.id)
+  );
+}
+
+function getTodayPriority(id) {
+  const record = state.progress.words[id];
+  if (!record) return 120;
+
+  const lastSeen = Date.parse(record.lastSeen || "");
+  const recentMiss = record.wrong && Date.now() - lastSeen < 7 * 24 * 60 * 60 * 1000;
+
+  return (
+    (isProgressIdInReview(id) ? 1000 : 0) +
+    (recentMiss ? 240 : 0) +
+    (record.wrong || 0) * 80 -
+    (record.correct || 0) * 20 +
+    (state.progress.practiced.includes(id) ? 0 : 120)
+  );
+}
+
+function isProgressIdInReview(id) {
+  const record = state.progress.words[id];
+  return Boolean(record?.needsReview || (record?.wrong || 0) > (record?.correct || 0));
+}
+
 function getAvailableCategories() {
   return [...new Set(vocabulary.map((item) => item.category))]
     .filter((category) => state.levelFilter === "all" || String(getCategoryLevel(category)) === state.levelFilter)
@@ -1175,6 +1625,10 @@ function pickWithoutRecent(items, recentIds) {
 function rememberRecent(recentIds, id) {
   recentIds.push(id);
   if (recentIds.length > 8) recentIds.shift();
+}
+
+function capitalize(value) {
+  return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
 function getDistractorTranslations(correctItem, count) {

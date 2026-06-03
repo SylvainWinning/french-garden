@@ -40,6 +40,7 @@
         <article>
           <span>Temps total</span>
           <strong id="total-session-time">0 min</strong>
+          <em>Source Elle uniquement</em>
         </article>
       </section>
 
@@ -64,6 +65,16 @@
             </div>
           </div>
           <div id="activity-bars" class="bars"></div>
+        </article>
+
+        <article class="panel">
+          <div class="panel-title">
+            <div>
+              <p>Priorité</p>
+              <h2>À retravailler</h2>
+            </div>
+          </div>
+          <div id="review-priority-list" class="review-priority-list"></div>
         </article>
 
         <article class="panel">
@@ -106,10 +117,15 @@
             </div>
           </div>
           <textarea id="csv-input" placeholder="Colle ici les colonnes Horodateur et Infos utiles depuis Google Sheets."></textarea>
-          <button id="import-csv" type="button">Mettre à jour le dashboard</button>
+          <div class="import-actions">
+            <button id="import-csv" type="button">Mettre à jour le dashboard</button>
+            <button id="refresh-csv" class="secondary-action" type="button">Actualiser depuis Google Sheets</button>
+          </div>
+          <p id="import-status" class="import-status" role="status" aria-live="polite"></p>
         </article>
       </section>
     </main>
-    <script type="module" src="./dashboard.js?v=20260525-time-reset"></script>
+    <script src="./dashboard-data.js?v=20260525-time-reset"></script>
+    <script src="./dashboard.js?v=20260525-time-reset"></script>
   </body>
 </html>

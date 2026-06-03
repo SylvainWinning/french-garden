@@ -1,20 +1,55 @@
-import { trackerRows } from "./dashboard-data.js?v=20260525-time-reset";
-
-const state = { rows: trackerRows };
+const state = { rows: window.trackerRows || [] };
+const REMOTE_CSV_URL_KEY = "french-garden-dashboard-csv-url";
 const LEGACY_CODEX_SESSION_IDS = new Set([
   "81ccb76d-f5e3-4f88-ae8c-278c08750263",
   "codex-test",
 ]);
-
-render();
 
 document.querySelector("#import-csv").addEventListener("click", () => {
   const rows = parseCsv(document.querySelector("#csv-input").value.trim());
   if (rows.length) {
     state.rows = rows;
     render();
+    setImportStatus(`Dashboard mis à jour avec ${rows.length} événement${rows.length > 1 ? "s" : ""}.`, "success");
+  } else {
+    setImportStatus("Aucune ligne exploitable trouvée dans l'export collé.", "error");
   }
 });
+
+document.querySelector("#refresh-csv").addEventListener("click", refreshFromRemoteCsv);
+
+setInitialImportStatus();
+render();
+
+async function refreshFromRemoteCsv() {
+  const button = document.querySelector("#refresh-csv");
+  const url = getRemoteCsvUrl();
+  if (!url) {
+    setImportStatus("Actualisation annulée : aucune URL CSV enregistrée.", "error");
+    return;
+  }
+
+  button.disabled = true;
+  setImportStatus("Actualisation en cours...", "");
+
+  try {
+    const response = await fetch(withCacheBust(url));
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+    const text = await response.text();
+    const rows = parseCsv(text.trim());
+    if (!rows.length) throw new Error("CSV vide ou format non reconnu");
+
+    state.rows = rows;
+    document.querySelector("#csv-input").value = text;
+    render();
+    setImportStatus(`Actualisé depuis Google Sheets : ${rows.length} événement${rows.length > 1 ? "s" : ""}.`, "success");
+  } catch {
+    setImportStatus("Impossible d'actualiser. Vérifie que l'URL CSV publiée est accessible.", "error");
+  } finally {
+    button.disabled = false;
+  }
+}
 
 function render() {
   const events = state.rows.map(normalizeRow).filter(Boolean);
@@ -41,6 +76,7 @@ function render() {
   drawPie(correct, wrong);
   renderLegend(correct, wrong);
   renderActivityBars(answers);
+  renderReviewPriorities(answers);
   renderRewards(rewards);
   renderSessionDurations(sessionDurations);
   renderRecent(events);
@@ -212,6 +248,40 @@ function renderActivityBars(answers) {
       .join("") || `<p>Aucune réponse pour l'instant.</p>`;
 }
 
+function renderReviewPriorities(answers) {
+  const priorities = answers
+    .filter((answer) => answer.correct === false)
+    .reduce((map, answer) => {
+      const key = answer.itemId || `${answer.activityType || "exercice"} sans élément`;
+      const current = map.get(key) || {
+        itemId: key,
+        activityTypes: new Set(),
+        wrongCount: 0,
+        lastSeenAt: answer.receivedAt,
+        lastSeenAtMs: 0,
+      };
+      current.activityTypes.add(answer.activityType || "exercice");
+      current.wrongCount += 1;
+      if ((answer.occurredAtMs || 0) >= current.lastSeenAtMs) {
+        current.lastSeenAt = answer.receivedAt;
+        current.lastSeenAtMs = answer.occurredAtMs || 0;
+      }
+      map.set(key, current);
+      return map;
+    }, new Map());
+
+  document.querySelector("#review-priority-list").innerHTML =
+    Array.from(priorities.values())
+      .sort((a, b) => b.wrongCount - a.wrongCount || b.lastSeenAtMs - a.lastSeenAtMs)
+      .slice(0, 5)
+      .map((item) => {
+        const countLabel = `${item.wrongCount} erreur${item.wrongCount > 1 ? "s" : ""}`;
+        const activityLabel = Array.from(item.activityTypes).sort().join(", ");
+        return `<div class="review-priority-item"><span>${escapeHtml(item.lastSeenAt)}</span><strong>${escapeHtml(item.itemId)}</strong><em>${escapeHtml(activityLabel)} · ${escapeHtml(countLabel)}</em></div>`;
+      })
+      .join("") || `<p>Aucun point difficile pour l'instant.</p>`;
+}
+
 function renderRewards(rewards) {
   document.querySelector("#reward-list").innerHTML =
     rewards
@@ -229,15 +299,22 @@ function renderRewards(rewards) {
 }
 
 function renderSessionDurations(sessions) {
+  const sortedSessions = sessions
+    .slice()
+    .sort((a, b) => Number(b.source === "Elle") - Number(a.source === "Elle") || b.startedAtMs - a.startedAtMs);
+
   document.querySelector("#session-duration-list").innerHTML =
-    sessions
+    sortedSessions
       .map((session) => {
         const details = [
           session.source,
           `${session.answerCount} réponse${session.answerCount > 1 ? "s" : ""}`,
           `${session.eventCount} événement${session.eventCount > 1 ? "s" : ""}`,
         ].join(" · ");
-        return `<div class="session-duration-item"><span>${escapeHtml(session.startedAt)}</span><strong>${escapeHtml(formatDuration(session.durationMs))}</strong><em>${escapeHtml(details)}</em></div>`;
+        const isLearnerSession = session.source === "Elle";
+        const className = isLearnerSession ? "session-duration-item" : "session-duration-item is-debug-source";
+        const debugLabel = isLearnerSession ? "" : `<small>Donnée test/debug</small>`;
+        return `<div class="${className}"><span>${escapeHtml(session.startedAt)}</span><strong>${escapeHtml(formatDuration(session.durationMs))}</strong><em>${escapeHtml(details)}</em>${debugLabel}</div>`;
       })
       .join("") || `<p>Aucune durée de session pour l'instant.</p>`;
 }
@@ -254,16 +331,75 @@ function renderRecent(events) {
 
 function parseCsv(text) {
   if (!text) return [];
-  return parseDelimitedRows(text)
+  const rows = parseDelimitedRows(text);
+  const headers = rows[0]?.map((cell) => cell.trim()) || [];
+  const headerLookup = new Map(headers.map((header, index) => [normalizeHeader(header), index]));
+
+  if (hasStructuredTrackerHeaders(headerLookup)) {
+    return rows
+      .slice(1)
+      .map((cells) => rowFromStructuredCsv(cells, headerLookup))
+      .filter(Boolean);
+  }
+
+  return rows
     .map((cells) => {
       if (cells.length < 2) return null;
-      if (cells[0].trim() === "Horodateur" && cells[1].trim() === "Infos utiles") return null;
+      if (isHeaderRow(cells)) return null;
       return {
         receivedAt: cells[0].trim(),
         info: cells.slice(1).join(" ").trim(),
       };
     })
     .filter(Boolean);
+}
+
+function hasStructuredTrackerHeaders(headerLookup) {
+  return headerLookup.has("eventtype") && headerLookup.has("sessionid");
+}
+
+function rowFromStructuredCsv(cells, headerLookup) {
+  const value = (name) => cells[headerLookup.get(name)]?.trim() || "";
+  const eventType = value("eventtype");
+  if (!eventType) return null;
+
+  const payload = {
+    timestamp: value("timestamp"),
+    eventType,
+    activityType: value("activitytype"),
+    correct: parseBooleanValue(value("correct")),
+    itemId: value("itemid"),
+    score: Number(value("score") || 0),
+    correctAnswers: Number(value("correctanswers") || 0),
+    practicedCount: Number(value("practicedcount") || 0),
+    reviewCount: Number(value("reviewcount") || 0),
+    appLanguage: value("applanguage"),
+    sessionId: value("sessionid"),
+    clientId: value("clientid"),
+    userAgent: value("useragent"),
+    source: value("source"),
+  };
+
+  return {
+    receivedAt: value("receivedat") || payload.timestamp,
+    info: JSON.stringify(payload),
+  };
+}
+
+function parseBooleanValue(value) {
+  if (value === "true" || value === "TRUE" || value === "1") return true;
+  if (value === "false" || value === "FALSE" || value === "0") return false;
+  return "";
+}
+
+function isHeaderRow(cells) {
+  const first = normalizeHeader(cells[0]);
+  const second = normalizeHeader(cells[1]);
+  return (
+    (first === "horodateur" && second === "infosutiles") ||
+    (first === "timestamp" && second === "payload") ||
+    (first === "receivedat" && second === "info")
+  );
 }
 
 function parseDelimitedRows(text) {
@@ -359,6 +495,60 @@ function formatDuration(milliseconds) {
 
 function legendRow(color, label, count) {
   return `<div class="legend-row"><span class="dot" style="background:${color}"></span><span>${label}</span><strong>${count}</strong></div>`;
+}
+
+function setInitialImportStatus() {
+  if (readStoredCsvUrl()) {
+    setImportStatus("Source Google Sheets enregistrée.", "");
+  }
+}
+
+function getRemoteCsvUrl() {
+  const saved = readStoredCsvUrl();
+  if (saved) return saved;
+
+  const value = window.prompt("Colle l'URL CSV publiée de la feuille de réponses Google Forms.", "");
+  if (value === null) return "";
+
+  const url = value.trim();
+  if (!url) {
+    window.localStorage.removeItem(REMOTE_CSV_URL_KEY);
+    return "";
+  }
+  if (!/^https?:\/\//i.test(url)) {
+    setImportStatus("L'URL doit commencer par http:// ou https://.", "error");
+    return "";
+  }
+
+  window.localStorage.setItem(REMOTE_CSV_URL_KEY, url);
+  return url;
+}
+
+function readStoredCsvUrl() {
+  try {
+    return window.localStorage.getItem(REMOTE_CSV_URL_KEY) || "";
+  } catch {
+    return "";
+  }
+}
+
+function withCacheBust(url) {
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}_=${Date.now()}`;
+}
+
+function setImportStatus(message, tone) {
+  const status = document.querySelector("#import-status");
+  status.textContent = message;
+  status.dataset.tone = tone;
+}
+
+function normalizeHeader(value) {
+  return String(value)
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/gi, "")
+    .toLowerCase();
 }
 
 function setText(id, value) {

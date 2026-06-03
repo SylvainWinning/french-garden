@@ -234,11 +234,101 @@ h3 {
 
 .filter-panel,
 .progress-panel,
-.reward-panel {
+.reward-panel,
+.today-panel {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: rgba(255, 250, 252, 0.78);
   padding: 12px;
+}
+
+.today-panel {
+  display: grid;
+  gap: 12px;
+  margin: 14px 0;
+}
+
+.today-intro {
+  display: grid;
+  gap: 12px;
+}
+
+.today-intro p:not(.eyebrow) {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.today-start-button {
+  align-self: center;
+}
+
+.today-session {
+  display: grid;
+  gap: 12px;
+}
+
+.today-meter {
+  display: grid;
+  gap: 7px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.today-card {
+  display: grid;
+  gap: 12px;
+  border: 2px solid rgba(116, 215, 178, 0.42);
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: 0 12px 28px rgba(52, 34, 56, 0.08);
+  padding: 16px;
+}
+
+.today-card-heading {
+  display: grid;
+  gap: 7px;
+}
+
+.today-card-heading h3,
+.today-empty h3 {
+  color: #a22465;
+  font-size: 1.75rem;
+}
+
+.today-card-heading p:not(.eyebrow),
+.today-empty p,
+.today-summary-stat,
+.today-summary-review {
+  margin: 0;
+  color: var(--muted);
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.today-picture {
+  display: block;
+  width: min(100%, 300px);
+  aspect-ratio: 4 / 3;
+  justify-self: center;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  background: white;
+  object-fit: cover;
+}
+
+.today-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.today-empty {
+  display: grid;
+  gap: 10px;
 }
 
 .filter-panel {
@@ -573,6 +663,16 @@ h3 {
   text-align: left;
 }
 
+.answer-button:disabled {
+  cursor: default;
+  opacity: 0.74;
+}
+
+.answer-button.is-selected {
+  border-color: var(--pink);
+  background: var(--pink-soft);
+}
+
 .answer-button:active,
 .match-tile:active {
   transform: translateY(1px);
@@ -881,6 +981,11 @@ h3 {
     align-items: end;
   }
 
+  .today-intro {
+    grid-template-columns: minmax(0, 1fr) minmax(220px, 260px);
+    align-items: center;
+  }
+
   .view {
     max-width: 740px;
     margin: 0 auto;
@@ -901,6 +1006,7 @@ h3 {
 
 @media (max-width: 640px) {
   .app-shell {
+    overflow-x: clip;
     padding: 12px 10px 28px;
   }
 
@@ -983,7 +1089,34 @@ h3 {
     justify-content: center;
   }
 
+  .today-panel {
+    margin: 10px 0;
+    padding: 10px;
+  }
+
+  .today-intro {
+    gap: 9px;
+  }
+
+  .today-intro p:not(.eyebrow) {
+    font-size: 0.85rem;
+  }
+
+  .today-card {
+    padding: 14px;
+  }
+
+  .today-card-heading h3,
+  .today-empty h3 {
+    font-size: 1.35rem;
+  }
+
+  .today-actions {
+    grid-template-columns: 1fr;
+  }
+
   .tab {
+    flex: 0 0 auto;
     min-width: max-content;
     min-height: 38px;
     padding: 8px 11px;
@@ -994,16 +1127,21 @@ h3 {
     display: flex;
     gap: 5px;
     overflow-x: auto;
-    margin: 8px -10px 10px;
-    padding: 7px 10px;
-    border-left: 0;
-    border-right: 0;
-    border-radius: 0;
-    scrollbar-width: none;
+    max-width: 100%;
+    margin: 8px 0 10px;
+    padding: 7px;
+    scroll-padding-inline: 8px;
+    scrollbar-width: thin;
+    mask-image: linear-gradient(90deg, transparent 0, black 18px, black calc(100% - 18px), transparent 100%);
   }
 
   .tabs::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+  }
+
+  .tabs::-webkit-scrollbar-thumb {
+    border-radius: 999px;
+    background: rgba(118, 95, 125, 0.32);
   }
 
   .section-heading {

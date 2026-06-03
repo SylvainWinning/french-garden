@@ -110,6 +110,15 @@ button {
   margin-top: 6px;
 }
 
+.summary-grid em {
+  color: var(--muted);
+  display: block;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 700;
+  margin-top: 4px;
+}
+
 .dashboard-grid {
   grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
 }
@@ -144,6 +153,7 @@ button {
 .bars,
 .recent-list,
 .reward-list,
+.review-priority-list,
 .session-duration-list {
   display: grid;
   gap: 10px;
@@ -154,6 +164,7 @@ button {
 .bar-row,
 .recent-item,
 .reward-item,
+.review-priority-item,
 .session-duration-item {
   align-items: center;
   display: grid;
@@ -189,6 +200,7 @@ button {
 
 .recent-item,
 .reward-item,
+.review-priority-item,
 .session-duration-item {
   border-top: 1px solid var(--line);
   grid-template-columns: 120px 1fr auto;
@@ -197,6 +209,7 @@ button {
 
 .recent-item strong,
 .reward-item strong,
+.review-priority-item strong,
 .session-duration-item strong {
   font-size: 14px;
 }
@@ -205,13 +218,34 @@ button {
 .recent-item em,
 .reward-item span,
 .reward-item em,
+.review-priority-item span,
+.review-priority-item em,
 .session-duration-item span,
 .session-duration-item em,
+.session-duration-item small,
 .bar-row span,
 .legend-row span {
   color: var(--muted);
   font-size: 13px;
   font-style: normal;
+}
+
+.review-priority-item strong {
+  color: var(--red);
+}
+
+.session-duration-item small {
+  background: #f7eff8;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  display: inline-flex;
+  font-weight: 800;
+  justify-self: end;
+  padding: 4px 8px;
+}
+
+.session-duration-item.is-debug-source {
+  opacity: 0.64;
 }
 
 textarea {
@@ -225,9 +259,36 @@ textarea {
   width: 100%;
 }
 
-#import-csv {
+.import-actions {
+  display: grid;
+  gap: 10px;
   margin-top: 12px;
+}
+
+#import-csv,
+#refresh-csv {
   width: 100%;
+}
+
+.secondary-action {
+  background: white;
+  color: var(--pink);
+}
+
+.import-status {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  margin: 10px 0 0;
+  min-height: 18px;
+}
+
+.import-status[data-tone="success"] {
+  color: var(--green);
+}
+
+.import-status[data-tone="error"] {
+  color: var(--red);
 }
 
 @media (max-width: 900px) {
@@ -242,8 +303,13 @@ textarea {
 
   .recent-item,
   .reward-item,
+  .review-priority-item,
   .session-duration-item {
     grid-template-columns: 1fr;
+  }
+
+  .session-duration-item small {
+    justify-self: start;
   }
 }
 
