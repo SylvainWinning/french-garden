@@ -1,4 +1,4 @@
-const SHEET_NAME = "Events";
+const SHEET_NAME = "French Garden Usage Tracker";
 const SPREADSHEET_ID = "1jH-f1Pz5pMgW2ts5BSBwaChSIivFcfjkPO6p_4PIWDw";
 const HEADERS = [
   "receivedAt",
@@ -15,6 +15,7 @@ const HEADERS = [
   "sessionId",
   "clientId",
   "userAgent",
+  "source",
 ];
 
 function doPost(event) {
@@ -34,9 +35,15 @@ function doPost(event) {
 }
 
 function doGet() {
+  const sheet = getEventsSheet();
+  const values = sheet.getDataRange().getDisplayValues();
+  const csv = values
+    .map((row) => row.map(escapeCsvCell).join(","))
+    .join("\n");
+
   return ContentService
-    .createTextOutput(JSON.stringify({ ok: true, app: "French Garden tracker" }))
-    .setMimeType(ContentService.MimeType.JSON);
+    .createTextOutput(csv)
+    .setMimeType(ContentService.MimeType.CSV);
 }
 
 function getEventsSheet() {
@@ -57,4 +64,10 @@ function parsePayload(event) {
   } catch {
     return {};
   }
+}
+
+function escapeCsvCell(value) {
+  const text = String(value ?? "");
+  if (!/[",\n\r]/.test(text)) return text;
+  return `"${text.replace(/"/g, '""')}"`;
 }

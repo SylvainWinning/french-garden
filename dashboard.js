@@ -1,5 +1,6 @@
 const state = { rows: window.trackerRows || [] };
-const REMOTE_CSV_URL_KEY = "french-garden-dashboard-csv-url";
+const TRACKER_SPREADSHEET_ID = "1jH-f1Pz5pMgW2ts5BSBwaChSIivFcfjkPO6p_4PIWDw";
+const TRACKER_SHEET_NAME = "French Garden Usage Tracker";
 const LEGACY_CODEX_SESSION_IDS = new Set([
   "81ccb76d-f5e3-4f88-ae8c-278c08750263",
   "codex-test",
@@ -18,34 +19,25 @@ document.querySelector("#import-csv").addEventListener("click", () => {
 
 document.querySelector("#refresh-csv").addEventListener("click", refreshFromRemoteCsv);
 
-setInitialImportStatus();
+setImportStatus("Source automatique prête.", "");
 render();
 
 async function refreshFromRemoteCsv() {
   const button = document.querySelector("#refresh-csv");
-  const url = getRemoteCsvUrl();
-  if (!url) {
-    setImportStatus("Actualisation annulée : aucune URL CSV enregistrée.", "error");
-    return;
-  }
 
   button.disabled = true;
   setImportStatus("Actualisation en cours...", "");
 
   try {
-    const response = await fetch(withCacheBust(url));
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-
-    const text = await response.text();
-    const rows = parseCsv(text.trim());
+    const rows = await loadTrackerRowsFromGoogleSheet();
     if (!rows.length) throw new Error("CSV vide ou format non reconnu");
 
     state.rows = rows;
-    document.querySelector("#csv-input").value = text;
+    document.querySelector("#csv-input").value = rowsToDebugCsv(rows);
     render();
     setImportStatus(`Actualisé depuis Google Sheets : ${rows.length} événement${rows.length > 1 ? "s" : ""}.`, "success");
   } catch {
-    setImportStatus("Impossible d'actualiser. Vérifie que l'URL CSV publiée est accessible.", "error");
+    setImportStatus("Impossible d'actualiser automatiquement. Vérifie que tu as accès à la feuille Google Sheets.", "error");
   } finally {
     button.disabled = false;
   }
@@ -329,6 +321,88 @@ function renderRecent(events) {
     .join("");
 }
 
+async function loadTrackerRowsFromGoogleSheet() {
+  const table = await loadGoogleVisualizationTable();
+  const headers = table.cols.map((column) => column.label || column.id || "");
+  const headerLookup = new Map(headers.map((header, index) => [normalizeHeader(header), index]));
+
+  if (!hasStructuredTrackerHeaders(headerLookup)) {
+    throw new Error("Format Google Sheets non reconnu");
+  }
+
+  return table.rows
+    .map((row) => row.c.map((cell) => formatGoogleCell(cell)))
+    .map((cells) => rowFromStructuredCsv(cells, headerLookup))
+    .filter(Boolean);
+}
+
+function loadGoogleVisualizationTable() {
+  return new Promise((resolve, reject) => {
+    const callbackName = `handleFrenchGardenTracker${Date.now()}`;
+    const script = document.createElement("script");
+    const query = new URLSearchParams({
+      tqx: `version:0.6;responseHandler:${callbackName}`,
+      sheet: TRACKER_SHEET_NAME,
+      _: Date.now().toString(),
+    });
+    const timeoutId = window.setTimeout(() => {
+      cleanup();
+      reject(new Error("Google Sheets timeout"));
+    }, 15000);
+
+    window[callbackName] = (response) => {
+      cleanup();
+      if (response?.status === "error") {
+        reject(new Error(response.errors?.[0]?.detailed_message || "Google Sheets error"));
+        return;
+      }
+      if (!response?.table) {
+        reject(new Error("Google Sheets response missing table"));
+        return;
+      }
+      resolve(response.table);
+    };
+
+    script.onerror = () => {
+      cleanup();
+      reject(new Error("Google Sheets script failed"));
+    };
+    script.src = `https://docs.google.com/spreadsheets/d/${TRACKER_SPREADSHEET_ID}/gviz/tq?${query.toString()}`;
+    document.body.appendChild(script);
+
+    function cleanup() {
+      window.clearTimeout(timeoutId);
+      delete window[callbackName];
+      script.remove();
+    }
+  });
+}
+
+function formatGoogleCell(cell) {
+  if (!cell) return "";
+  if (cell.f) return cell.f;
+  if (cell.v === null || cell.v === undefined) return "";
+  if (typeof cell.v === "string") {
+    const dateMatch = cell.v.match(/^Date\((\d+),(\d+),(\d+),(\d+),(\d+),(\d+)\)$/);
+    if (dateMatch) {
+      const [, year, month, day, hour, minute, second] = dateMatch.map(Number);
+      return new Date(year, month, day, hour, minute, second).toISOString();
+    }
+  }
+  return String(cell.v);
+}
+
+function rowsToDebugCsv(rows) {
+  return [
+    "Horodateur\tInfos utiles",
+    ...rows.map((row) => `${escapeDelimited(row.receivedAt)}\t${escapeDelimited(row.info)}`),
+  ].join("\n");
+}
+
+function escapeDelimited(value) {
+  return `"${String(value).replace(/"/g, '""')}"`;
+}
+
 function parseCsv(text) {
   if (!text) return [];
   const rows = parseDelimitedRows(text);
@@ -495,46 +569,6 @@ function formatDuration(milliseconds) {
 
 function legendRow(color, label, count) {
   return `<div class="legend-row"><span class="dot" style="background:${color}"></span><span>${label}</span><strong>${count}</strong></div>`;
-}
-
-function setInitialImportStatus() {
-  if (readStoredCsvUrl()) {
-    setImportStatus("Source Google Sheets enregistrée.", "");
-  }
-}
-
-function getRemoteCsvUrl() {
-  const saved = readStoredCsvUrl();
-  if (saved) return saved;
-
-  const value = window.prompt("Colle l'URL CSV publiée de la feuille de réponses Google Forms.", "");
-  if (value === null) return "";
-
-  const url = value.trim();
-  if (!url) {
-    window.localStorage.removeItem(REMOTE_CSV_URL_KEY);
-    return "";
-  }
-  if (!/^https?:\/\//i.test(url)) {
-    setImportStatus("L'URL doit commencer par http:// ou https://.", "error");
-    return "";
-  }
-
-  window.localStorage.setItem(REMOTE_CSV_URL_KEY, url);
-  return url;
-}
-
-function readStoredCsvUrl() {
-  try {
-    return window.localStorage.getItem(REMOTE_CSV_URL_KEY) || "";
-  } catch {
-    return "";
-  }
-}
-
-function withCacheBust(url) {
-  const separator = url.includes("?") ? "&" : "?";
-  return `${url}${separator}_=${Date.now()}`;
 }
 
 function setImportStatus(message, tone) {
