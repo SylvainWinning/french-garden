@@ -66,10 +66,23 @@
 
           <div id="today-session" class="today-session" hidden>
             <div class="today-meter">
-              <span id="today-progress-label"></span>
-              <span class="progress-track">
-                <span id="today-progress-bar"></span>
-              </span>
+              <div
+                class="daily-growth"
+                aria-hidden="true"
+                style="--daily-progress: 0%; --daily-progress-value: 0"
+              >
+                <span class="daily-growth-sun"></span>
+                <span class="daily-growth-soil"></span>
+                <span class="daily-growth-stem"></span>
+                <span class="daily-growth-leaf daily-growth-leaf-left"></span>
+                <span class="daily-growth-leaf daily-growth-leaf-right"></span>
+              </div>
+              <div>
+                <span id="today-progress-label"></span>
+                <span class="progress-track">
+                  <span id="today-progress-bar"></span>
+                </span>
+              </div>
             </div>
             <article id="today-card" class="today-card"></article>
           </div>

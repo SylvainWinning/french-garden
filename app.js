@@ -157,6 +157,7 @@ const elements = {
   todaySession: document.querySelector("#today-session"),
   todayProgressLabel: document.querySelector("#today-progress-label"),
   todayProgressBar: document.querySelector("#today-progress-bar"),
+  dailyGrowth: document.querySelector(".daily-growth"),
   todayCard: document.querySelector("#today-card"),
   tabs: document.querySelectorAll(".tab"),
   views: document.querySelectorAll(".view"),
@@ -493,7 +494,7 @@ function renderTodaySession() {
 
   if (!session.steps.length) {
     elements.todayProgressLabel.textContent = t("todayEmptyTitle");
-    elements.todayProgressBar.style.width = "0%";
+    updateTodayProgressVisual(0);
     elements.todayCard.replaceChildren(createTodayEmptyState());
     return;
   }
@@ -510,8 +511,16 @@ function renderTodaySession() {
     current,
     total,
   });
-  elements.todayProgressBar.style.width = `${Math.round((completed / total) * 100)}%`;
+  updateTodayProgressVisual(Math.round((completed / total) * 100));
   renderTodayStep(session.steps[session.index]);
+}
+
+function updateTodayProgressVisual(percent) {
+  const safePercent = Math.max(0, Math.min(100, percent));
+  elements.todayProgressBar.style.width = `${safePercent}%`;
+  elements.dailyGrowth?.style.setProperty("--daily-progress", `${safePercent}%`);
+  elements.dailyGrowth?.style.setProperty("--daily-progress-value", safePercent);
+  elements.dailyGrowth?.classList.toggle("is-complete", safePercent >= 100);
 }
 
 function renderTodayStep(step) {
@@ -576,12 +585,19 @@ function renderTodayFeedback(step) {
     : formatText(t("todayCorrectAnswer"), { answer: getTodayStepAnswer(step) });
 
   const nextButton = document.createElement("button");
-  nextButton.className = "primary-button";
+  const isFinalStep = state.todaySession.index === state.todaySession.steps.length - 1;
+  nextButton.className = isFinalStep
+    ? "primary-button session-finish-button"
+    : "primary-button";
   nextButton.type = "button";
-  nextButton.textContent =
-    state.todaySession.index === state.todaySession.steps.length - 1
-      ? t("todayFinishButton")
-      : t("todayNextButton");
+  if (isFinalStep) {
+    const icon = createSproutIcon("finish-sprout");
+    const label = document.createElement("span");
+    label.textContent = t("todayFinishButton");
+    nextButton.append(icon, label);
+  } else {
+    nextButton.textContent = t("todayNextButton");
+  }
   nextButton.addEventListener("click", nextTodayStep);
 
   elements.todayCard.append(feedback, nextButton);
@@ -628,8 +644,13 @@ function renderTodaySummary() {
     .filter(uniqueValue());
 
   elements.todayProgressLabel.textContent = t("todayCompleteLabel");
-  elements.todayProgressBar.style.width = "100%";
+  updateTodayProgressVisual(100);
   elements.todayCard.replaceChildren();
+
+  const completeMark = document.createElement("div");
+  completeMark.className = "today-complete-mark";
+  completeMark.setAttribute("aria-hidden", "true");
+  completeMark.append(createSproutIcon("today-complete-sprout"));
 
   const title = document.createElement("h3");
   title.textContent = t("todaySummaryTitle");
@@ -651,7 +672,33 @@ function renderTodaySummary() {
   button.textContent = t("todayPracticeAgain");
   button.addEventListener("click", startTodaySession);
 
-  elements.todayCard.append(title, stats, review, button);
+  elements.todayCard.append(completeMark, title, stats, review, button);
+}
+
+function createSproutIcon(className) {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("class", `sprout-icon ${className}`);
+  svg.setAttribute("viewBox", "0 0 32 32");
+  svg.setAttribute("aria-hidden", "true");
+
+  const stem = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  stem.setAttribute("class", "sprout-icon-stem");
+  stem.setAttribute("d", "M16 26V13");
+
+  const leftLeaf = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  leftLeaf.setAttribute("class", "sprout-icon-leaf");
+  leftLeaf.setAttribute("d", "M15 15C9 15 6 12 5 7c5 0 9 2 10 8Z");
+
+  const rightLeaf = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  rightLeaf.setAttribute("class", "sprout-icon-leaf");
+  rightLeaf.setAttribute("d", "M17 17c7 0 10-4 10-10-6 0-10 3-10 10Z");
+
+  const root = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  root.setAttribute("class", "sprout-icon-root");
+  root.setAttribute("d", "M11 26h10");
+
+  svg.append(leftLeaf, rightLeaf, stem, root);
+  return svg;
 }
 
 function createTodayEmptyState() {
